@@ -1,0 +1,12 @@
+<RCC>
+ <qresource prefix="/plugins/CaigosConnector">
+ <file>EZUSoftMT.png</file>
+ <file>EZUSoftOT.png</file>
+ </qresource>
+</RCC>
+<!-- 
+!! Achtung: Kommentar am Anfang der Datei führt zum Fehler
+Befehl zur Neuerstellung/Neueinbindung des Logos 
+pyrcc4 -o resources.py resources.qrc 
+-->
+
