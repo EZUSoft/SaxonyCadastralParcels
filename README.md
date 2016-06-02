@@ -10,3 +10,5 @@ Ab CAIGOS Version 2015 werden die Projektdaten in einer SQL-Datenbank gespeicher
 
 Bedienung:
 Nach Einbinden des PlugIns sind die Funktionen unter dem Menüpunkt "Datenbank" --> "CAIGOS-Datenprovider" verfügbar.
+
+[Homepage](http://forum.makobo.de/viewtopic.php?f=3&t=38)
