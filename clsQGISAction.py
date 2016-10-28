@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
+ clsQGISAction
+  25.10.2016 V0.3
+  - toUTF8(qry4pri.value(0)): lName auf alle Zugriffe erweitert
+  31.08.2016 V0.3
+  - Integration Shape-Export
+  - Hinweis für Kreise für QGis.QGIS_VERSION_INT < 21200
+  20.06.2016 V0.2
+  - Einbindung der GIDDB Sachdaten
                                  A QGIS plugin
  CAIGOS-PostgreSQL/PostGIS in QGIS darstellen
                               -------------------
@@ -11,6 +19,7 @@
  ***************************************************************************/
 
 /***************************************************************************
+ *                                                                         
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -29,7 +38,7 @@ from PyQt4.QtSql import QSqlDatabase, QSqlQuery, QSqlError
 
 
 from clsDatenbank import *
-from clsRenderingByQT import *
+
 from clsRenderingByQML import *
 from fnc4all import *
 
@@ -68,11 +77,16 @@ class clsQGISAction():
                 child.setCustomProperty("showFeatureCount", True)
     
 
-    def QGISBaum(self, db, User, rootname, qry4pri, qry, bGenDar, bPrjNeu, OutOfQGIS=False):
+    def QGISBaum(self, db, User, rootname, qry4pri, qry, bGenDar, bPrjNeu, iDarGruppe, b3DDar, bDBTab, bSHPexp, bLeer, OutOfQGIS=False):
+        if bSHPexp:
+            s = QSettings( "EZUSoft", "CAIGOS-Konnektor" )
+            txtCodePage = s.value( "txtCodePage", 0)
+            txtZielPfad = s.value( "txtSHPDir", "" )
+            
         # allgemeine Daten für Layereinbindung ermitteln
         clsRendXML = clsRenderingByQML()
-        clsRendQT  = clsRenderingByQT()
         clsdb=pgDataBase()
+
         ConnInfo=clsdb.GetConnString()
         Epsg=clsdb.GetEPSG()
 
@@ -118,28 +132,58 @@ class clsQGISAction():
                 except:
                     QtGui.QMessageBox.critical( None, "Abbruch","Vorgang durch Nutzereingriff beendet")
                     break
-                vlp = clsdb.VectorLayerPath (qry4pri.value(2),ConnInfo,Epsg, qry4pri.value(1))
+                
+                GISDBTabName=None               
+                if bDBTab and qry4pri.value(3):
+                    clsdb1 = pgDataBase()
+                    if clsdb1.CheckDBTabSpalte(qry4pri.value(3)):
+                        GISDBTabName=qry4pri.value(3).lower()
+                    else:
+                        addFehler("Fehler Tabellenzugriff (" + qry4pri.value(3) + ") bei: " + lName )
+                
+                #VectorLayerPath (Art, ConnInfo, Epsg, LayerID, b3DDar , GISDbTab)
+
+                vlp = clsdb.VectorLayerPath (qry4pri.value(2),ConnInfo,Epsg, qry4pri.value(1),b3DDar, GISDBTabName)
                 if vlp:
                     # ================== 1. Schritt Layer einbinden =============================
                     #printlog (qry4pri.value(0)+ "|" + str(type(qry4pri.value(0))))
-                    Layer = iface.addVectorLayer(vlp,qry4pri.value(0) , "postgres")
+                    #printlog (vlp)
+                    #errlog( qry4pri.value(0) + "\n" + vlp)
+                    # QgsVectorFileWriter.writeAsVectorFormat(Layer,"hoppla.shp","utf-8",None,"ESRI Shapefile")
+                    lName=toUTF8(qry4pri.value(0))
+                    if lName <> qry4pri.value(0):
+                        printlog (qry4pri.value(0) + ": UTF Korrektur vorm Erstellen notwendig")
+                    Layer = iface.addVectorLayer(vlp, lName , "postgres")
                     if Layer:
-                        Layer.setReadOnly()
-                        iface.legendInterface().setLayerVisible(Layer, False) 
+                        if bLeer or Layer.featureCount() > 0:
+                            if bSHPexp:
+                                pShp=txtZielPfad + "/" + lName +".shp"
+                                QgsVectorFileWriter.writeAsVectorFormat(Layer,pShp,txtCodePage,None,"ESRI Shapefile")
+                                QgsMapLayerRegistry.instance().removeMapLayer( Layer.id() )
+                                Layer = iface.addVectorLayer(pShp,lName , "ogr")
+                        
+                            Layer.setReadOnly()
+                            iface.legendInterface().setLayerVisible(Layer, False) 
 
-                        if bGenDar:
-                        # ================== 2. Schritt Darstellung definieren  ================== 
-                        #          Render(self, cgUser, qLayer, cgEbenenTyp, LayerID, bRolle, Group=0): 
-                            if QGis.QGIS_VERSION_INT < 21200 and qry4pri.value(2) == 3:
-                                # Texte in Wien und Pisa:  ohne Rolle schreiben (nur erster Maßstab) Maßstab
-                                clsRendXML.Render(User, Layer, qry4pri.value(2), qry4pri.value(1),False,0)
-                            else:                    
-                                # Neue Version über QML
-                                clsRendXML.Render(User, Layer, qry4pri.value(2), qry4pri.value(1),True,0)
+                            if bGenDar:
+                            # ================== 2. Schritt Darstellung definieren  ================== 
+                            #          Render(self, cgUser, qLayer, cgEbenenTyp, LayerID, bRolle, Group=0): 
+                                if QGis.QGIS_VERSION_INT < 21200 and qry4pri.value(2) == 3:
+                                    # Texte in Wien und Pisa:  ohne Rolle schreiben (nur erster Maßstab) Maßstab
+                                    clsRendXML.Render(User, Layer, qry4pri.value(2), qry4pri.value(1),False,iDarGruppe)
+                                else:                    
+                                    # Neue Version über QML
+                                    clsRendXML.Render(User, Layer, qry4pri.value(2), qry4pri.value(1),True,iDarGruppe)
+                        else:
+                            QgsMapLayerRegistry.instance().removeMapLayer( Layer.id() )
                     else:
-                        addFehler("Fehler Layereinbindung bei: " + qry4pri.value(0) + "\n" + vlp)
+                        if not (lName[-4:] == "(RL)" and QGis.QGIS_VERSION_INT < 21200):
+                            addFehler("Fehler Layereinbindung bei: " + lName + "\n" + vlp)
+                        else:
+                            # Bei QGIS-Wien und leerem Layer (keine Referenzllinie) kommt es zum Fehler - welcher eigentlich ja keiner ist
+                            debuglog (vlp + "|" + lName  + "|" + "postgres")
                 else:
-                    addFehler(u"Nicht unterstützt Typ " + str(qry4pri.value(2)) + ": " + qry4pri.value(0))
+                    addFehler(u"Nicht unterstützt Typ " + str(qry4pri.value(2)) + ": " + lName)
 
 
         # print str(qry.size()) -> Absturz!!!???
@@ -168,36 +212,58 @@ class clsQGISAction():
             if qry.value(0) != Fachschale:
                 newparent=True
                 if not OutOfQGIS:
-                    f = iface.legendInterface().addGroup( qry.value(0), False,grpProjekt)
+                    f = iface.legendInterface().addGroup( toUTF8(qry.value(0)), False,grpProjekt)
                     iface.legendInterface().setGroupExpanded( f, True )
                     iface.legendInterface().setGroupVisible( f, False )
 
             if newparent or qry.value(1) != Thema:
                 newparent=True
                 if not OutOfQGIS:
-                    t = iface.legendInterface().addGroup( qry.value(1), False,f)
+                    t = iface.legendInterface().addGroup( toUTF8(qry.value(1)), False,f)
                     iface.legendInterface().setGroupExpanded( t, False )
                     iface.legendInterface().setGroupVisible( t, False )
-                       
-                        
             
             if newparent or qry.value(2) != Gruppe:
                 newparent=True
                 if not OutOfQGIS:
-                    g = iface.legendInterface().addGroup( qry.value(2), False,t)
+                    g = iface.legendInterface().addGroup( toUTF8(qry.value(2)), False,t)
                     iface.legendInterface().setGroupExpanded( g, False )
                     iface.legendInterface().setGroupVisible( g, False )
-
             
-            # Layer verschieben
+            # Layer in Gruppen schieben 
             if not OutOfQGIS:
-                Layer = self.LayerbyName(qry.value(3))
-                if Layer:
-                    iface.legendInterface().moveLayer( Layer, g )
-                # self.ObjektAnzahlZeigen() -> kostet Zeit optional machen
-
+                # 1. Eine eventuelle Referenzlinie
+                # Jetzt noch eine eventuelle Randlinie verschieben
+                # das Verfahren über den "errechneten" Namen ist etwas dirty, 
+                # aber die Randlinienen deshalb in die Layerliste zu übernehmen schein etwas überdimentioniert
+                gu = None
+                lName=toUTF8(qry.value(3))
+                if lName <> qry.value(3):
+                    printlog(qry.value(3) + ": UTF Korrektur vorm Verschieben notwendig")
                 
+                if qry.value(5) == 3: # Text
+                    RLLayer = self.LayerbyName(lName + '(RL)')
+                    if RLLayer:
+                        if RLLayer.geometryType() == 1: # es ist eine Strecke 
+                            gu = iface.legendInterface().addGroup( toUTF8(qry.value(3)), False,g)
+                            iface.legendInterface().setGroupExpanded( gu, False )
+                            iface.legendInterface().setGroupVisible( gu, False )
+                            iface.legendInterface().moveLayer( RLLayer, gu )
+                
+                # self.ObjektAnzahlZeigen() -> kostet Zeit optional machen
  
+                Layer = self.LayerbyName(lName)
+                if Layer:
+                    if gu:
+                        # Textlayer mit Refrenzlinie
+                        iface.legendInterface().moveLayer( Layer, gu )
+                    else:
+                        # Nomale Layer
+                        iface.legendInterface().moveLayer( Layer, g )
+                else:
+                    printlog ("Layer wurde nicht verschoben: "  + qry.value(3)  )
+
+                        
             Fachschale=qry.value(0)
             Thema=qry.value(1)
             Gruppe=qry.value(2)
@@ -216,7 +282,7 @@ class clsQGISAction():
                 # in Wien und (Pisa) funktioniert das nicht
                 addHinweis("\nBenutzerdefinierte Layserreihenfolge konnte nicht automatisch gesetzt werden!\nDiese muss in  dieser QGIS-Version manuell aktiviert werden.")
         if QGis.QGIS_VERSION_INT < 21200:
-            addHinweis("Bis QGIS 2.12 ist nur eine eingeschränkte Textdarstellung möglich!")
+            addHinweis("Bis QGIS 2.12 ist nur eine eingeschränkte Textdarstellung möglich!\nAußerdem können keine Kreise dargestellt werden!")
         
         if len(getFehler()) > 0:
             errbox("\n\n".join(getFehler()))

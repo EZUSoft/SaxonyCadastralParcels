@@ -10,12 +10,30 @@
 name=CAIGOS PostGIS Konnektor
 qgisMinimumVersion=2.8
 description=CAIGOS SQL Projekte anzeigen
-version=0.1
+
 author=Mike Blechschmidt EZUSoft
 email=qgis@makobo.de
-version=0.1
-changelog=30.05.2016 V0.1:
-	-  Freigabe einer ersten Version
+version=0.3
+changelog=_______________
+        25.10.2016 V0.3:
+        - optionaler Export nach ESRI-Shape
+        - optionale Übernahme der Z-Werte (3D)
+        - optionale Übernahme von Ebenen ohne Objekte
+        - Caigos Geometietyp Kreis wird unterstützt
+        - Textreferenzlinien werden unterstützt
+        _______________
+        27.06.2016 V0.2
+        - Fehler bei fehlendem Domainnamen (Linux) beseitigt
+        - Anpassung Stiftbreite bei SVG (Mindeststiftbreite)
+        - SVG als UFT-8 schreiben, da Umlaute (als Text) vorkommen können
+        - Auswahl der CAIGOS Darstellungsgruppe
+        - optionale Einbindung der GISDB-Tabellen
+        _______________
+        30.05.2016 V0.1:
+        -  Freigabe einer ersten Version
+
+
+
 about=Remark:
       CAIGOS-GIS is a German-speaking product. Thatswhy the plugin is only available in German language.
       . 
@@ -26,19 +44,17 @@ about=Remark:
 
 tracker=https://github.com/EZUSoft/CaigosConnector/issues
 repository=https://github.com/EZUSoft/CaigosConnector
+homepage=http://www.makobo.de/links/Forum_CaigosConnector.php
 # End of mandatory metadata
 
 # Recommended items:
 
-# Uncomment the following line and add your changelog:
-# changelog=
 
 # Tags are comma separated with spaces allowed
-tags=Datenprovider CAIGOS Import 
-
-homepage=http://forum.makobo.de/viewtopic.php?f=3&t=38
+tags=Datenprovider,CAIGOS,Import 
 category=Database
 icon=icon.png
+
 # experimental flag
 experimental=False
 

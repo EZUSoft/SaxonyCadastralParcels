@@ -2,6 +2,8 @@
 """
 /***************************************************************************
  uiDBAnbindung
+   16.08.2016 V0.3
+   - Dateidialog mit Vorauswahl der letzten/aktuellen Datei
                                  A QGIS plugin
  CAIGOS-PostgreSQL/PostGIS in QGIS darstellen
                               -------------------
@@ -120,7 +122,8 @@ class uiDBAnbindung(QtGui.QDialog, FORM_CLASS):
         
     def OpenProjekt(self):
         try:
-            iniDat = QtGui.QFileDialog.getOpenFileName(None, 'database.ini im Projektordner des CAIGOS-SQL-Projektes', "database.ini", "database (*.ini)")
+            iniDat = QtGui.QFileDialog.getOpenFileName(None, 'database.ini im Projektordner des CAIGOS-SQL-Projektes', 
+                         self.leCGProjektPfad.text().strip() + "/database.ini", "database (*.ini)")
             if iniDat:
                 self.ConnAusDatabaseINI(iniDat)
                 
@@ -190,6 +193,7 @@ if __name__ == "__main__":
     from qgis.utils import *
 
     app = QApplication(sys.argv)
+    #QtGui.QFileDialog.getOpenFileName(None, 'database.ini im Projektordner des CAIGOS-SQL-Projektes', "d:/tar/database.ini", "database (*.ini)")
     cls=uiDBAnbindung()
     result=cls.exec_()
     """

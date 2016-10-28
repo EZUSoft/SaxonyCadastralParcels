@@ -20,7 +20,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-
+from PyQt4 import QtGui
 from qgis.utils import os, sys
 from PyQt4.QtCore import QSettings
 from itertools import cycle, izip
@@ -67,16 +67,20 @@ def resetHinweis() :
 except Exception as e:
     exc_type, exc_obj, exc_tb = sys.exc_info()
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    subLZF ("Irgendwas",exc_type, fname, exc_tb.tb_lineno)
+    subLZF ("Irgendwas")
 """
-def subLZF(exc_type, fname, tb_lineno, Sonstiges = None):
+def subLZF(Sonstiges = None):
     #http://stackoverflow.com/questions/1278705/python-when-i-catch-an-exception-how-do-i-get-the-type-file-and-line-number
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    tb_lineno=exc_tb.tb_lineno
     try:
         QgsMessageLog.logMessage( traceback.format_exc().replace("\n",chr(9))+ (chr(9) + Sonstiges) if Sonstiges else "", u'CaigosConnector:Fehler' )
     except:
         pass
-    QMessageBox.critical( None,"PlugIn Laufzeitfehler" ,str(exc_type) + ": \nDatei: " + fname + "\nZeile: "+ str(tb_lineno) + ("\n" + Sonstiges) if Sonstiges else "")
-    addFehler ("LZF:" + traceback.format_exc().replace("\n",chr(9)) + (chr(9) + Sonstiges) if Sonstiges else "")
+    if fncDebugMode():
+        QMessageBox.critical( None,"PlugIn Laufzeitfehler" ,str(exc_type) + ": \nDatei: " + fname + "\nZeile: "+ str(tb_lineno) + ("\n" + Sonstiges) if Sonstiges else "")
+    addFehler ("LZF:" + traceback.format_exc().replace("\n",chr(9)) + (chr(9) + Sonstiges) if Sonstiges else "")    
     
 def errbox (text,p=None):
     su=text
@@ -88,12 +92,31 @@ def errbox (text,p=None):
     except:
         pass
 
+def toUTF8(uText):
+    # 06.10.2016:
+    # Diese Funktion ist die Lösung für ein ganz übles Problem
+    # Beim Auslesen der PG-Datenbank kommt es zufällig und nicht wiederholbar zu Problemen mit Umlauten (UniCode)
+    # Aus unersichtlichen Gründen wird manchmal kein Ansiwert sondern UTF-8 übergeben
+    # z.B: STPL-F_FussgÃ¤ngerzone, STPL-T_StraÃenbahnLinie,STPL-T_FÃ¶rderschule50000
+    #
+    # da hier bei der Ausgabe auch die jeweilige Console eine Rolle spielt, konnte die Ursache 
+    # nicht gefunden werden
+    try:
+        a=""
+        for char in uText:
+            a= a + chr(ord(char))
+        return a.decode("utf8")
+    except:
+        return uText
 
-def msgbox (text):
+def msgbox (text, Pure=False):
     su=text
     if type(text) == str:
-        su=text.decode("utf8")    
-    QMessageBox.information(None, "PlugIn Hinweis", su)
+        su=text.decode("utf8") 
+    if Pure:
+        QMessageBox.about(None, "PlugIn Hinweis", su)    
+    else:
+        QMessageBox.information(None, "PlugIn Hinweis", su)
     try:
         QgsMessageLog.logMessage( su, u'CaigosConnector:Hinweise' )
     except:
@@ -160,10 +183,20 @@ def fncXOR(message, key=None):
 
 
 if __name__ == "__main__":
-    addFehler ("ccc" )
-    addFehler ("xxxx")
-    print getFehler()
-    resetFehler()
+    app = QtGui.QApplication(sys.argv)
+    try:
+        x = 5 / 0
+    except Exception as e:
+        """
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        QMessageBox.critical( None,"PlugIn Laufzeitfehler",str(exc_type) + fname + str(exc_tb.tb_lineno))
+        """
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        subLZF ("Irgendwas")
+
+        
+        
     print getFehler()
 
 

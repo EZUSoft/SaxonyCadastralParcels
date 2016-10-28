@@ -2,7 +2,23 @@
 """
 /***************************************************************************
  clsRenderingByQML
-                                 A QGIS plugin
+  05.10.2016 V0.3
+  - Kreis jetzt auch mit attributierter Darstellung
+  - Text-Referenzlinie mit Darstellung
+  
+  09.09.2016 V0.3
+  - EinLinienPunktMarker: Start um halbe Signaturbreite verschieben, sonst steht's über
+  - fnctxtCtoQ cArt 2 korrigiert
+  - Abstand Liniensignaturen korrigiert (Interval setzen, auch wenn Abstand 0)
+  
+  08.08.2016 V0.3
+  - Einbindung fnctxtCtoQ(cArt) für Kreis
+  
+  16.06.2016 V0.2
+  - Generierung von Liniensignaturen
+  - Generierung von Flächenfüllungen
+
+                                A QGIS plugin
  CAIGOS-PostgreSQL/PostGIS in QGIS darstellen
                               -------------------
         begin                : 2016-04-18
@@ -177,8 +193,168 @@ def EinfacheBeschriftungZeichnen(clsdb, db, qLayer,AktDefName, Group):
             qLayer.setCustomProperty("labeling/upsidedownLabels","2")
             qLayer.setCustomProperty("labeling/wrapChar",r"\n")  
 
+def EinSchraffurPunktFuellung (eSym,db,clsdb,AttID,Win,sigPfad, svgPfad,Num, Group):
+    rsParam=clsdb.OpenRecordset(db,clsdb.sqlAttParam4IDandArt(0, AttID , Group))
+    rsParam.next()
+    # ===================================       SVG erzeugen            ===================================================
+    sigpath=fncfield(rsParam,"sigpath")
+    if sigpath == "":
+        sigpath="PRIV:"
+    signame=fncfield(rsParam,"signame") 
+    cgPfad=sigpath.replace("PRIV:",sigPfad)
+    qPfad=sigpath.replace("PRIV:",svgPfad)
+    subMkPfad (qPfad, True)
+
+    qDat= cgPfad + signame  + ".sig"
+    qDat=qDat.replace("\\","/")
+    zDat = qPfad + signame + ".svg"
+    zDat=zDat.replace("\\","/")
+
+    Sig2SVG (qDat,zDat)
+    
+    # ===============================================================================================================
+    # Layerdaten schreiben
+    qmap={'pass':'0','class':'SVGFill','locked':'0'}
+    eLayer=ET.SubElement(eSym,"layer",qmap)    
+    prop={}
+    prop['angle']=str(Win)
+    prop['svgFile']=zDat
+    prop['width']=str(fncfield(rsParam,"wsizemm"))
+    prop['pattern_width_unit']="MapUnit"
+    for p in prop:
+        ET.SubElement(eLayer, "prop",k=p,v=prop[p])
+    
+    # Dummylinie muss sein
+    qmap={}   
+    qmap['alpha']='1'
+    qmap['clip_to_extent']='1'
+    qmap['type']='line'
+    eSym=ET.SubElement(eLayer,"symbol",qmap)   
+    qmap={} 
+    qmap={'pass':'0','class':'SimpleLine','locked':'0'}
+    eLayer=ET.SubElement(eSym,"layer",qmap)    
+    ET.SubElement(eLayer, "prop",k="line_width",v="0")    
+
+    
+    return eLayer   
+
+def EinLinienPunktMarker (eSym,db,clsdb,AttID,qPosition, sUnit, Group, Abstand=None, Start=0, Offset = 0):
+    try:
+        rsParam=clsdb.OpenRecordset(db,clsdb.sqlAttParam4IDandArt(0, AttID , Group))
+        rsParam.next()
+        
+        sigPfad=clsdb.GetCGProjektPfad() + "/signatur/"
+        svgPfad=clsdb.GetQSVGProjektPfad()
+
+        # ===================================       SVG erzeugen            ===================================================
+        sigpath=fncfield(rsParam,"sigpath")
+        if sigpath == "":
+            sigpath="PRIV:"
+        signame=fncfield(rsParam,"signame") 
+        cgPfad=sigpath.replace("PRIV:",sigPfad)
+        qPfad=sigpath.replace("PRIV:",svgPfad)
+        subMkPfad (qPfad, True)
+
+        qDat= cgPfad + signame  + ".sig"
+        qDat=qDat.replace("\\","/")
+        zDat = qPfad + signame + ".svg"
+        zDat=zDat.replace("\\","/")
+
+        Sig2SVG (qDat,zDat)
+        
+        # ===============================================================================================================
+        # Layerdaten schreiben
+        qmap={'pass':'0','class':'MarkerLine','locked':'0'}
+        eLayer=ET.SubElement(eSym,"layer",qmap)    
+        prop={}
+        if not Abstand is None: # 22.08.16 is None, da bei =0 "gearbeitet" werden muss
+            prop['interval']=str(Abstand+fncfield(rsParam,"wsizemm"))
+            prop['interval_map_unit_scale']='0,0,0,0,0,0'
+            prop['interval_unit']="MapUnit" # 22.08.16 caigos scheint bei Liniensignaturen immer Karteneinheiten zu nehmen
+        else:
+            #'lastvertex',"firstvertex","centralpoint"
+            prop['placement']=qPosition
+        
+        # 22.08.16 caigos scheint bei Liniensignaturen immer Karteneinheiten zu nehmen
+        # 05.10.16: # +fncfield(rsParam,"wsizemm")/2) hat sich als falsch erwiesen (getestet mit Zuordungspfeil)
+        prop['offset_along_line']=str(Start) # +fncfield(rsParam,"wsizemm")/2) # 09.09.16 Start um halbe Signaturbreite verschieben, sonnst stehts über
+        prop['offset_along_line_unit']="MapUnit"
+        prop['offset']=str(Offset * -1)
+        prop['offset_unit']="MapUnit"
+        prop['offset_along_line_unit']="MapUnit"
+        prop['offset_map_unit_scale']='0,0,0,0,0,0'
+
+
+        prop['rotate']='1'    
+        for p in prop:
+            ET.SubElement(eLayer, "prop",k=p,v=prop[p])
+        
+        # jetzt das Symbol
+        qmap={}   
+        qmap['alpha']='1'
+        qmap['clip_to_extent']='1'
+        qmap['type']='marker'
+        eSym=ET.SubElement(eLayer,"symbol",qmap)   
+        qmap={} 
+        qmap={'pass':'0','class':'SvgMarker','locked':'0'}
+        eLayer=ET.SubElement(eSym,"layer",qmap)    
+        prop={}
+        prop['angle']='0' # str(Win)
+        prop['color']='0,0,0,255'
+        prop['horizontal_anchor_point']='1'
+        prop['name']=zDat
+        prop['offset']='0,0'
+        prop['offset_map_unit_scale']='0,0,0,0,0,0'
+        prop['offset_unit']= sUnit
+        prop['outline_color']='255,255,255,255'
+        prop['outline_width']='0'
+        prop['outline_width_map_unit_scale']='0,0,0,0,0,0'
+        prop['outline_width_unit']='MM'
+        prop['scale_method']='diameter'
+        prop['size']=str(fncfield(rsParam,"wsizemm"))
+        prop['size_map_unit_scale']='0,0,0,0,0,0'
+        prop['size_unit']=sUnit
+        prop['vertical_anchor_point']='1'    
+        for p in prop:
+            ET.SubElement(eLayer, "prop",k=p,v=prop[p])    
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        subLZF ("EinLinienPunktMarker (AttID=" + AttID + ")")
+    
+    return eLayer   
+
+def EineSchraffurLinie (eSym,rsAtt,Num, Group):
+    if fncfield(rsAtt,"fsalign") == 1:
+        # Individualwinkel: Nur der Winkel aus den Geodaten gilt
+        sWin= '"alphafs"' if Num ==1  else '"alphafs"+90'
+    else:
+        # nur der Winkel aus dem Attribut gilt
+        sWin= str(fncfield(rsAtt,"fsalpha")) if Num ==1  else str(fncfield(rsAtt,"fsalpha")+90)
+    qmap={'pass':'0','class':'LinePatternFill','locked':'0'}
+    l1=ET.SubElement(eSym,"layer",qmap)                           
+    prop={}
+    prop['lineangle_expression']=sWin
+    prop['color']='0,0,255,255'
+    prop['distance']=str(fncfield(rsAtt,"fsabstand" + str(Num)))
+    prop['distance_map_unit_scale']='0,0,0,0,0,0'
+    prop['distance_unit']='MapUnit'
+    prop['line_width']='0.26'
+    prop['line_width_map_unit_scale']='0,0,0,0,0,0'
+    prop['line_width_unit']='MM'
+    prop['offset']='0'
+    prop['offset_map_unit_scale']='0,0,0,0,0,0'
+    prop['offset_unit']='MM'
+    prop['outline_width_map_unit_scale']='0,0,0,0,0,0'
+    prop['outline_width_unit']='MM'
+    for p in prop:
+        ET.SubElement(l1, "prop",k=p,v=prop[p]) 
+    return ET.SubElement(l1, "symbol", {'alpha':'1','clip_to_extent':'1','type':'line'})                                                            
+
+            
 
 def EineStreckeXMLAttributieren (eSymbols, symNum,db,clsdb,qTyp, LinArt, AktAttID, Group, AttNum,eSym = None,fDist = None,fWin = None):
+    # printlog ("Strecke  " + AktAttID + ": " + clsdb.sqlAttParam4IDandArt(1, AktAttID, Group))
     rsParam=clsdb.OpenRecordset(db,clsdb.sqlAttParam4IDandArt(1, AktAttID, Group))
     """
                   #                      0                     1           2        3      4       5      6       7              8           9            10          11
@@ -218,10 +394,11 @@ def EineStreckeXMLAttributieren (eSymbols, symNum,db,clsdb,qTyp, LinArt, AktAttI
         qmap['type']='line'
         qmap['name']=str(symNum)
         eSym=ET.SubElement(eSymbols,"symbol",qmap)
+
     
     while rsParam.next(): 
     # ===============================================================================================================
-    # 2. <layer    
+    # 3. layer Haupt und Teillinien   
         basemm=fncfield(rsParam,"basemm")
         penType=fncfield(rsParam,"pentype")
         if penType < 5:
@@ -293,6 +470,20 @@ def EineStreckeXMLAttributieren (eSymbols, symNum,db,clsdb,qTyp, LinArt, AktAttI
         #lineLayer = lineMeta.createSymbolLayer(qmap)
         for p in prop:
             ET.SubElement(eLayer, "prop",k=p,v=prop[p])
+            
+        # ===============================================================================================================
+        # Liniensymbole am Ende schreiben
+        # Eventuelle Liniensigaturen
+        sUnit='MapUnit' if fncfield(rsParam,"scrresize") == "J" else "MM"
+        if fncfield(rsParam,"sigbeginattr") <> "{00000000-0000-0000-0000-000000000000}":    
+            EinLinienPunktMarker (eSym,db,clsdb,fncfield(rsParam,"sigbeginattr") ,'firstvertex',sUnit, Group)
+        if fncfield(rsParam,"sigendattr") <> "{00000000-0000-0000-0000-000000000000}":    
+            EinLinienPunktMarker (eSym,db,clsdb,fncfield(rsParam,"sigendattr") ,'lastvertex',sUnit, Group)
+        if fncfield(rsParam,"sigmiddleattr") <> "{00000000-0000-0000-0000-000000000000}":    
+            EinLinienPunktMarker (eSym,db,clsdb,fncfield(rsParam,"sigmiddleattr") ,'centralpoint',sUnit, Group)
+        if fncfield(rsParam,"linesigattr") <> "{00000000-0000-0000-0000-000000000000}":    
+            EinLinienPunktMarker (eSym,db,clsdb,fncfield(rsParam,"linesigattr") ,'egal',sUnit, Group,fncfield(rsParam,"linesigofs"),fncfield(rsParam,"linesigbegin"),fncfield(rsParam,"linesigofsline"))
+               
     return eSymbols
         
 def EineFlaecheXMLFuellstil (eSymbols, symNum,qTyp,rsParam) :
@@ -611,7 +802,8 @@ def EinenTextXMLAttributieren (eSettings,rsParam):
     return eSettings    
 
 class clsRenderingByQML():      
-    def Render(self, cgUser, qLayer, cgEbenenTyp, LayerID, bRolle, Group=0): 
+    def Render(self, cgUser, qLayer, cgEbenenTyp, LayerID, bRolle, Group): 
+        # bRolle = False bei QGIS < Pisa und Text
         symNum=0
         clsdb = pgDataBase()
         db=clsdb.CurrentDB()
@@ -621,15 +813,19 @@ class clsRenderingByQML():
             eRenderer = ET.SubElement(eRoot,"renderer-v2",{'forceraster':'0','symbollevels':'0','type':'singleSymbol','enableorderby':'0'})
         else:
             eRenderer = ET.SubElement(eRoot,"renderer-v2",{'symbollevels':'0', 'type':'RuleRenderer'})
-             
+        #if clsdb.NeedLine4TextLayer(db,LayerID, cgUser):
+        #    printlog ("Zuordnungspfeil 4" + LayerID)
+        
+        
         # ===========================================================================================================================
         # Variante 1: Rollenbasierte Darstellung einer Ebene
-        if bRolle and (cgEbenenTyp == 0 or cgEbenenTyp == 1 or cgEbenenTyp == 3 or cgEbenenTyp == 5 or cgEbenenTyp == 6): 
-            rsAttDefs=clsdb.OpenRecordset(db,clsdb.sqlAttDef4Layer( cgEbenenTyp, LayerID))
-            if bRolle and (cgEbenenTyp == 3):
+        if bRolle : # and (cgEbenenTyp == 0 or cgEbenenTyp == 1 or cgEbenenTyp == 3 or cgEbenenTyp == 5 or cgEbenenTyp == 6): 
+            rsAttDefs=clsdb.OpenRecordset(db,clsdb.sqlAllAttDef4Layer( cgEbenenTyp, LayerID))
+            if cgEbenenTyp == 3:
                 eRules = ET.SubElement(eLabeling,"rules")
             else:
                 eRules = ET.SubElement(eRenderer,"rules")
+
             eSymbols= ET.SubElement(eRenderer,"symbols")
             
             # =========  Schleife über alle (Individual-)Attributdefinitionen einer Ebene ================
@@ -642,7 +838,7 @@ class clsRenderingByQML():
                     AktDefName="IA:"+rsAttDefs.value(1)
 
                 rsAtt=clsdb.OpenRecordset(db,clsdb.sqlAtt4Massstab(cgEbenenTyp, AktDefID, Group))
-                debuglog (clsdb.sqlAtt4Massstab(cgEbenenTyp, AktDefID, Group))
+                #printlog ('Hier:' + str(cgEbenenTyp) + "|" + AktDefID + "|" +clsdb.sqlAtt4Massstab(cgEbenenTyp, AktDefID, Group))
                 if rsAtt.size() == 0 :
                     #printlog (rsAttDefs.value(0)+"|"+rsAttDefs.value(1)+"|"+LayerID)
                     addHinweis( LayerID + "/" + rsAttDefs.value(1)+ "/"+AktDefName+"(" + str(cgEbenenTyp) + "): Keine Attributdefinition gefunden")
@@ -667,6 +863,8 @@ class clsRenderingByQML():
                     qmap["scalemaxdenom"] = str(fncfield(rsAtt,"MMax"))
                     if cgEbenenTyp == 3:
                         qmap["description"] = str(fncfield(rsAtt,"AttNum")) + ":" + fncfield(rsAtt,"ATTname")
+                        #if fncfield(rsAtt,"lineattr") <> "{00000000-0000-0000-0000-000000000000}":
+                        #    printlog (fncfield(rsAtt,"lineattr"))
                     else:
                         qmap["label"] = str(fncfield(rsAtt,"AttNum")) + ":" + fncfield(rsAtt,"ATTname")
 
@@ -685,6 +883,7 @@ class clsRenderingByQML():
                         #rule.setSymbol(symbol)
                         #new_rule.appendChild(rule)  
 
+
                     if cgEbenenTyp == 3: # Text
                         # Einfaches Symbol (um Textaufhängung zu sehen -> Größe setzen)
                         s1  = ET.SubElement(eSymbols, "symbol", {'alpha':'1','clip_to_extent':'1','type':'marker','name':'0'})
@@ -696,83 +895,47 @@ class clsRenderingByQML():
                         # Jetzt der Text
                         eSettings=ET.SubElement(AktRule,"settings")
                         eSettings = EinenTextXMLAttributieren (eSettings,rsAtt )                      
-                    
+ 
+                    if cgEbenenTyp == 31: # Referenzlinie
+                        qTyp = qLayer.geometryType()
+                        EineStreckeXMLAttributieren (eSymbols, symNum, db,clsdb,qTyp, "line", fncfield(rsAtt,"lineattr"),Group,fncfield(rsAtt,"AttNum") )                     
+ 
                     if cgEbenenTyp == 5: # PolyLinie
                         qTyp = qLayer.geometryType()
                         EineStreckeXMLAttributieren (eSymbols, symNum, db,clsdb,qTyp, "line", fncfield(rsAtt,"lineattr"),Group,fncfield(rsAtt,"AttNum") )                     
                         #rule.setSymbol(symbol)
                         #new_rule.appendChild(rule)   
                     
-                    if cgEbenenTyp == 6: # Fläche
+                    if cgEbenenTyp == 2 or cgEbenenTyp == 6: # Kreis und Fläche
                         qTyp = qLayer.geometryType()
                         # 1. Füllung
-                        #printlog ( fncfield(rsAtt,"ATTname")+"|"+str(fncfield(rsAtt,"AttNum")))
+                        # printlog ( fncfield(rsAtt,"ATTname")+"|"+str(fncfield(rsAtt,"AttNum")))
                         eSym=EineFlaecheXMLFuellstil (eSymbols, symNum,qTyp,rsAtt)
                         
                          
                         # 3. Fülleffekte
+                        # 3.1. Schraffurlinie
                         # Im Gegensatz zum Drehwinkel an Punkten, schein hier der Winkel in die gleiche Richtung
                         # wie im QGIS zu laufen   
-                        # eine 2. Linie ist zur ersten 45 ° versetzt und wird nur gezeichnet, wenn eine erste Linie definiert
+                        # eine 2. Linie ist zur ersten 90 ° versetzt und wird nur gezeichnet, wenn eine erste Linie definiert
                         if fncfield(rsAtt,"fslineattr1") <> "{00000000-0000-0000-0000-000000000000}":
-                            # 1. Füllinie
-                            if fncfield(rsAtt,"fsalign") == 1:
-                                # Individualwinkel: Nur der Winkel aus den Geodaten gilt
-                                sWin= '"alphafs"'
-                            else:
-                                # nur der Winkel aus dem Attribut gilt
-                                sWin=str(fncfield(rsAtt,"fsalpha"))
-                            qmap={'pass':'0','class':'LinePatternFill','locked':'0'}
-                            l1=ET.SubElement(eSym,"layer",qmap)                           
-                            prop={}
-                            prop['lineangle_expression']=sWin
-                            prop['color']='0,0,255,255'
-                            prop['distance']=str(fncfield(rsAtt,"fsabstand1"))
-                            prop['distance_map_unit_scale']='0,0,0,0,0,0'
-                            prop['distance_unit']='MapUnit'
-                            prop['line_width']='0.26'
-                            prop['line_width_map_unit_scale']='0,0,0,0,0,0'
-                            prop['line_width_unit']='MM'
-                            prop['offset']='0'
-                            prop['offset_map_unit_scale']='0,0,0,0,0,0'
-                            prop['offset_unit']='MM'
-                            prop['outline_width_map_unit_scale']='0,0,0,0,0,0'
-                            prop['outline_width_unit']='MM'
-                            for p in prop:
-                                ET.SubElement(l1, "prop",k=p,v=prop[p]) 
-                            s1  = ET.SubElement(l1, "symbol", {'alpha':'1','clip_to_extent':'1','type':'line'})                                                            
+                            s1=EineSchraffurLinie (eSym,rsAtt,1, Group)
                             EineStreckeXMLAttributieren (None, 0,  db,clsdb,qTyp, "line",fncfield(rsAtt,"fslineattr1"),Group,0,s1 )
-                            
                             if fncfield(rsAtt,"fslineattr2") <> "{00000000-0000-0000-0000-000000000000}":
-                                # 2. Füllinie
-                                if fncfield(rsAtt,"fsalign") == 1:
-                                    # Individualwinkel: Nur der Winkel aus den Geodaten gilt
-                                    sWin= '"alphafs"+90'
-                                else:
-                                    # nur der Winkel aus dem Attribut gilt
-                                    sWin=str(fncfield(rsAtt,"fsalpha")+90)
-                                qmap={'pass':'0','class':'LinePatternFill','locked':'0'}
-                                l1=ET.SubElement(eSym,"layer",qmap)                           
-                                prop={}
-                                prop['lineangle_expression']=sWin
-                                prop['color']='0,0,255,255'
-                                prop['distance']=str(fncfield(rsAtt,"fsabstand2"))
-                                prop['distance_map_unit_scale']='0,0,0,0,0,0'
-                                prop['distance_unit']='MapUnit'
-                                prop['line_width']='0.26'
-                                prop['line_width_map_unit_scale']='0,0,0,0,0,0'
-                                prop['line_width_unit']='MM'
-                                prop['offset']='0'
-                                prop['offset_map_unit_scale']='0,0,0,0,0,0'
-                                prop['offset_unit']='MM'
-                                prop['outline_width_map_unit_scale']='0,0,0,0,0,0'
-                                prop['outline_width_unit']='MM'
-                                for p in prop:
-                                    ET.SubElement(l1, "prop",k=p,v=prop[p]) 
-                                s1  = ET.SubElement(l1, "symbol", {'alpha':'1','clip_to_extent':'1','type':'line'})                                
-                                
+                                s1=EineSchraffurLinie (eSym,rsAtt,2, Group) 
                                 EineStreckeXMLAttributieren (None, 0,  db,clsdb,qTyp, "line",fncfield(rsAtt,"fslineattr2"),Group,0,s1 )
-                        # 2. Randlinie
+
+                        # 3.2. Signaturfüllung
+                        #      funktioniert nicht 100%, da der Abstand zwischen den einzelnen Signaturen (woffsetmm, hoffsetmm) nicht einstellbar ist
+                        if fncfield(rsAtt,"pointattr1") <> "{00000000-0000-0000-0000-000000000000}":
+                            #  EinSchraffurPunktFuellung (eSym,db,clsdb,   AttID, sWin,                      sigPfad,                                svgPfad,                  Num, Group)
+                            sWin=abs(360-fncfield(rsAtt,"alpha1"))
+                            l1=EinSchraffurPunktFuellung (eSym,db,clsdb,fncfield(rsAtt,"pointattr1"),sWin,clsdb.GetCGProjektPfad() + "/signatur/",clsdb.GetQSVGProjektPfad(),1, Group)
+                            if fncfield(rsAtt,"pointattr2") <> "{00000000-0000-0000-0000-000000000000}":
+                                sWin=abs(360-fncfield(rsAtt,"alpha2"))
+                                l1=EinSchraffurPunktFuellung (eSym,db,clsdb,fncfield(rsAtt,"pointattr2"),sWin,clsdb.GetCGProjektPfad() + "/signatur/",clsdb.GetQSVGProjektPfad(),1, Group)
+                        
+                        # 4. Randlinie
                         EineStreckeXMLAttributieren (None, symNum, db,clsdb,qTyp, "outline", fncfield(rsAtt,"lineattr"),Group,fncfield(rsAtt,"AttNum"),eSym) 
 
                         
@@ -784,21 +947,22 @@ class clsRenderingByQML():
             # apply the renderer to the layer
             #qLayer.setRendererV2(renderer)
         
-        # ===========================================================================================================================
-        # Variante 2: Notvariante Beschriftung ohne Rolle
-        if not bRolle and (cgEbenenTyp ==3):  
+        else:
+            # ===========================================================================================================================
+            # Variante 2: Notvariante Beschriftung ohne Rolle
+            #if not bRolle and (cgEbenenTyp ==3):  
             # Nur EbenenAttDef (und auch nur erstes Maßstabsattribut)
             AktDefID = clsdb.AttDefID4Layer(db, LayerID, cgUser)
             AktDefName=clsdb.AttDefName4ID(db, AktDefID)
             EinfacheBeschriftungZeichnen(clsdb, db, qLayer,AktDefID, Group)
-        #errlog(Fehler)
+            #errlog(Fehler)
         
         
         tree = ET.ElementTree(eRoot)
         if fncDebugMode():
             tempName="d:/tar/mytest1.qml"
         else:
-            tempName=tempfile.gettempdir() + "/{D5E6A1F8-392F-4241-A0BD-5CED09CFABC7}.svg"
+            tempName=tempfile.gettempdir() + "/{D5E6A1F8-392F-4241-A0BD-5CED09CFABC7}.qml"
         f = open(tempName, "w")
 
         sXML=dom.parseString(

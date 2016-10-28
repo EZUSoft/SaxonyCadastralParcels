@@ -2,6 +2,11 @@
 """
 /***************************************************************************
  clsCaigosConnector
+ 31.08.16
+ - Shapeexport integriert
+ 
+ 17.06.2016 V0.2
+  - Darstellungsgruppe eingebaut
                                  A QGIS plugin
  CAIGOS-PostgreSQL/PostGIS in QGIS darstellen
                               -------------------
@@ -85,7 +90,7 @@ class clsCaigosConnector:
         self.actions = []
         self.menu = self.tr(u'&CAIGOS Datenprovider')
         s = QSettings( "EZUSoft", "CAIGOS-Konnektor" )
-        s.setValue( "–id–", fncXOR( getpass.getuser() + '|' + os.getenv('USERDOMAIN') ))
+        s.setValue( "–id–", fncXOR( str(getpass.getuser()) + '|' + str(os.getenv('USERDOMAIN')) ))
 
 
 
@@ -141,7 +146,7 @@ class clsCaigosConnector:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/CaigosConnector/EZUSoftOT.png'
+        icon_path = ':/plugins/CaigosConnector/m_icon.png'
         
         self.add_action(
             icon_path,
@@ -210,31 +215,75 @@ class clsCaigosConnector:
              db=None  
         
         cls=uiExplorer()
-        cls.OptSpeichern()
         if db :
             qry = clsdb.OpenRecordset(db, clsdb.sqlStrukAlleLayer()) 
             projekt=clsdb.GetCGProjektName()
-            guiListe, bGenDar, bPrjNeu = cls.LayerErmitteln(projekt, qry)
-
+            guiListe, bGenDar, bPrjNeu, iGruppe, b3DDar, bDBTab, bSHPexp, bLeer = cls.LayerErmitteln(projekt, qry)
             if guiListe:
                 InStr = "','".join(guiListe)
                 InStr = "'" + InStr + "'"
                 # QtGui.QMessageBox.information( None,'Datenbankzugriff',InStr) 
-                qry = clsdb.OpenRecordset(db, clsdb.sqlStrukAlleLayer(InStr))
-                pri = clsdb.OpenRecordset(db, clsdb.sqlAlleLayerByPri(User,InStr))
+                qry = clsdb.OpenRecordset(db, clsdb.sqlStrukAlleLayer(InStr,'DESC'))
+
+                pri_gisdb = clsdb.OpenRecordset(db, clsdb.sqlAlleLayerByPriAndGISDB(User,InStr))
+
                 c = clsQGISAction()
-                c.QGISBaum(db,User,projekt,pri,qry, bGenDar, bPrjNeu)
+                c.QGISBaum(db,User,projekt,pri_gisdb,qry, bGenDar, bPrjNeu,iGruppe, b3DDar, bDBTab, bSHPexp, bLeer)
+
+                #while (qry.next()):
+                #    printlog(qry.value(3))
+
         else:          
             reply = QtGui.QMessageBox.question(None, 'Fehler beim Datenbankanbindung',"Soll der Dialog \n'CAIGOS PostGIS Datenbankverbindung anpassen'\naufgerufen werden", QtGui.QMessageBox.Yes |  QtGui.QMessageBox.No, QtGui.QMessageBox.No)
             if reply == QtGui.QMessageBox.Yes:
                 self.SetzeDBAnbindung()
 
-        
+    def UTFTesten(self):
+        resetFehler()
+        resetHinweis()
+        User = '000'
+        clsdb = pgDataBase()
+
+        if clsdb.CheckVerbDaten(None,None,None,None, True):
+            return None, None
+            db=clsdb.CurrentDB()
+        else:
+             db=None  
+
+        cls=uiExplorer()
+        if db :
+            qry = clsdb.OpenRecordset(db, clsdb.sqlStrukAlleLayer()) 
+            projekt=clsdb.GetCGProjektName()
+            #guiListe, bGenDar, bPrjNeu, iGruppe, b3DDar, bDBTab, bSHPexp, bLeer = cls.LayerErmitteln(projekt, qry)
+            #if guiListe:
+            #    InStr = "','".join(guiListe)
+            #    InStr = "'" + InStr + "'"
+                # QtGui.QMessageBox.information( None,'Datenbankzugriff',InStr) 
+            qry = clsdb.OpenRecordset(db, clsdb.sqlStrukAlleLayer(None,'DESC'))
+            #print clsdb.sqlStrukAlleLayer(None,'DESC')
+            pri_gisdb = clsdb.OpenRecordset(db, clsdb.sqlAlleLayerByPriAndGISDB(User,None))
+            return qry,pri_gisdb
     
     def SetzeDBAnbindung(self):
         cls=uiDBAnbindung()
         cls.exec_()    
   
 if __name__ == "__main__":
-    c = clsCaigosConnector(QCoreApplication.instance())
-    print c.tr(u'&CAIGOS Datenprovider')
+        from qgis.utils import *
+        app = QApplication(sys.argv)
+
+    #while True:
+        c = clsCaigosConnector(QCoreApplication.instance())
+        qry,qry4pri=c.UTFTesten()
+        """
+        while (qry4pri.next()):
+            lName=toUTF8(qry4pri.value(0))
+            if lName <> qry4pri.value(0):
+                printlog (qry4pri.value(0) + ": UTF Korrektur vorm Erstellen notwendig")
+                xxx
+        while (qry.next()):
+            lName=toUTF8(qry.value(3))
+            if lName <> qry.value(3):
+                printlog (qry.value(3) + ": UTF Korrektur nach Erstellen notwendig")
+                xxx
+        """

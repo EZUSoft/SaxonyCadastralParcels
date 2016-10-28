@@ -1,7 +1,7 @@
 <RCC>
  <qresource prefix="/plugins/CaigosConnector">
- <file>EZUSoftMT.png</file>
- <file>EZUSoftOT.png</file>
+ <file>m_icon.png</file>
+ <file>icon.png</file>
  </qresource>
 </RCC>
 <!-- 
