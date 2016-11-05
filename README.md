@@ -1,5 +1,5 @@
 
-#CAIGOS PostGIS Konnektor
+#CAIGOS-GIS Connector/Provider
 
 Connector/Provider for CAIGOS-GIS PostGIS projects
 
