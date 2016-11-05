@@ -1,7 +1,7 @@
 
 #CAIGOS PostGIS Konnektor
 
-CAIGOS SQL Projekte anzeigen
+Connector/Provider for CAIGOS-GIS PostGIS projects
 
 Remark:
 CAIGOS-GIS is a German-speaking product. Thatswhy the plugin is only available in German language.
