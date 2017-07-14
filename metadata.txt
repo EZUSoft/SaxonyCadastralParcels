@@ -7,14 +7,20 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=CAIGOS PostGIS Konnektor
+name=CAIGOS PostgreSQL Konnektor
 qgisMinimumVersion=2.8
 description=CAIGOS SQL Projekte anzeigen
 
 author=Mike Blechschmidt EZUSoft
 email=qgis@makobo.de
-version=0.3
+version=0.4
 changelog=_______________
+        08.07.2017 V0.4:
+        - Anpassungen für CAIGOS 2016
+          - EPSG-Code aus Geometrietabellen
+          - Projekteinstellungen aus Admindatenbank
+        - Shapedatei mit (QGIS-) Darstellung speichern
+         _______________
         25.10.2016 V0.3:
         - optionaler Export nach ESRI-Shape
         - optionale Übernahme der Z-Werte (3D)

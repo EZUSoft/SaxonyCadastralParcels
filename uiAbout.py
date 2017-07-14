@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+
 /***************************************************************************
- uiAbout
+ uiAbout: Gemeinsame Basis für QGIS2 und QGIS3
                                  A QGIS plugin
  CAIGOS-PostgreSQL/PostGIS in QGIS darstellen
                               -------------------
@@ -21,11 +22,19 @@
  ***************************************************************************/
 """
 from qgis.utils import os, sys
-from PyQt4 import QtGui, uic
-from PyQt4.QtCore import  QDir
-from fnc4all import *
+try:
+    from PyQt5 import QtGui, uic
+    from PyQt5.QtCore import  QDir
+    from PyQt5.QtWidgets import QDialog
+except:
+    from PyQt4 import QtGui, uic
+    from PyQt4.QtCore import  QDir
+    from PyQt4.QtGui  import QDialog
 
-
+try:
+    from fnc4all import *
+except:
+    from .fnc4all import *
 
 d = os.path.dirname(__file__)
 QDir.addSearchPath( "CaigosConnector", d )
@@ -35,7 +44,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'uiAbout.ui'))
    
 
-class uiAbout(QtGui.QDialog, FORM_CLASS):
+class uiAbout(QDialog, FORM_CLASS):
     def __init__(self, parent=None):
         """Constructor."""
         super(uiAbout, self).__init__(parent)
@@ -55,8 +64,8 @@ class uiAbout(QtGui.QDialog, FORM_CLASS):
   
 if __name__ == "__main__":
     # zur zum lokalen testen
-    print  os.path.dirname(__file__)
+    print  (os.path.dirname(__file__))
 
-    app = QtGui.QApplication(sys.argv)    
+    app = QApplication(sys.argv)    
     cls=uiAbout()
     cls.exec_()

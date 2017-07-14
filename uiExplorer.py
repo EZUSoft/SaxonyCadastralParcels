@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- uiExplorer
+ uiExplorer: Gemeinsame Basis für QGIS2 und QGIS3
  09.09.2016 V0.3
   - Leere Ebenen optional einlesen
   - SHP Export integriert
@@ -28,16 +28,28 @@
  ***************************************************************************/
 """
 from qgis.utils import os, sys
-from PyQt4 import QtGui, uic
-from PyQt4.QtCore import Qt
-from PyQt4.QtCore import QSettings
-from fnc4all import *
+try:
+    from PyQt5 import QtGui, uic
+    from PyQt5.QtCore import  QDir, Qt
+    from PyQt5.QtWidgets import * 
+except:
+    from PyQt4 import QtGui, uic
+    from PyQt4.QtCore import  QDir, Qt
+    from PyQt4.QtGui  import * 
+
+    
+try:
+    from fnc4all import *
+except:
+    from .fnc4all import *
+
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'uiExplorer.ui'))
 
 
-class uiExplorer(QtGui.QDialog, FORM_CLASS):
+class uiExplorer(QDialog, FORM_CLASS):
     charsetList = ["System",
      "ascii",
      "big5",
@@ -140,12 +152,13 @@ class uiExplorer(QtGui.QDialog, FORM_CLASS):
         # self.<objectname>, and you can use autoconnect slots - see
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
+
         self.setupUi(self)
-        btn = self.button_box.button(QtGui.QDialogButtonBox.Apply)
+        btn = self.button_box.button(QDialogButtonBox.Apply)
         btn.clicked.connect(self.Anwenden)
         self.browseZielPfad.clicked.connect(self.browseZielPfad_clicked) 
         self.chkSHPexp.clicked.connect(self.chkSHPexp_clicked)    
-
+        self.setWindowTitle (fncCGFensterTitel())
 
         s = QSettings( "EZUSoft", "CAIGOS-Konnektor" )
         bGenDar = True  if s.value( "bGenDar", "Ja" )   == "Ja"   else False
@@ -185,6 +198,7 @@ class uiExplorer(QtGui.QDialog, FORM_CLASS):
         for g in range(5): 
             self.cbGruppe.addItem("Gruppe-" + str(g))
         self.cbGruppe.setCurrentIndex(iGruppe)
+
     
     def chkSHPexp_clicked(self):
         bGenSHP=self.chkSHPexp.isChecked()   
@@ -207,19 +221,19 @@ class uiExplorer(QtGui.QDialog, FORM_CLASS):
         
         if not os.path.exists(lastSHPDir):
             lastSHPDir=os.getcwd()    
-        flags = QtGui.QFileDialog.DontResolveSymlinks | QtGui.QFileDialog.ShowDirsOnly
-        shpDirName = QtGui.QFileDialog.getExistingDirectory(self, u"Verzeichnis für Shape-Dateien wählen",lastSHPDir,flags)
-        if shpDirName <> "":
+        flags = QFileDialog.DontResolveSymlinks | QFileDialog.ShowDirsOnly
+        shpDirName = QFileDialog.getExistingDirectory(self, u"Verzeichnis für Shape-Dateien wählen",lastSHPDir,flags)
+        if shpDirName != "":
             if len( os.listdir( shpDirName ) ) > 0:
-                reply = QtGui.QMessageBox.question(None, u'Verzeichnis ist nicht leer',u"Namensgleiche Shape-Dateien werden überschrieben", QtGui.QMessageBox.Yes |  QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Cancel)
-                if reply ==  QtGui.QMessageBox.Yes:
+                reply = QMessageBox.question(None, u'Verzeichnis ist nicht leer',u"Namensgleiche Shape-Dateien werden überschrieben", QMessageBox.Yes |  QMessageBox.Cancel, QMessageBox.Cancel)
+                if reply ==  QMessageBox.Yes:
                     self.txtZielPfad.setText(shpDirName)
             else:
                 self.txtZielPfad.setText(shpDirName)
                 
         #SHPDir, Dummy = os.path.split(shpDirName)
         #print "'" + SHPDir + "'" + "*"+"'" + Dummy + "'"
-        #if shpDirName <> "":
+        #if shpDirName != "":
         #    s.setValue("lastSHPDir", shpDirName)
 
     
@@ -244,7 +258,7 @@ class uiExplorer(QtGui.QDialog, FORM_CLASS):
         Fachschale = ""
         Thema = ""
         Gruppe = ""
-        p_item = QtGui.QTreeWidgetItem(tw)
+        p_item = QTreeWidgetItem(tw)
         p_item.setText(0, rootname)
         p_item.setCheckState(0,Qt.Unchecked)
         p_item.setExpanded(True)
@@ -253,7 +267,7 @@ class uiExplorer(QtGui.QDialog, FORM_CLASS):
         while (qry.next()):
             if qry.value(0) != Fachschale:
                 newparent=True
-                f_item = QtGui.QTreeWidgetItem(p_item)
+                f_item = QTreeWidgetItem(p_item)
                 f_item.setText(0, qry.value(0))
                 #f_item.setExpanded(True)
                 f_item.setCheckState(0,Qt.Unchecked)
@@ -261,19 +275,19 @@ class uiExplorer(QtGui.QDialog, FORM_CLASS):
 
             if newparent or qry.value(1) != Thema:
                 newparent=True
-                t_item = QtGui.QTreeWidgetItem(f_item)
+                t_item = QTreeWidgetItem(f_item)
                 t_item.setText(0, qry.value(1))
                 t_item.setCheckState(0,Qt.Unchecked)
                 t_item.setFlags(t_item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)
                
             if newparent or qry.value(2) != Gruppe:
                 newparent=True
-                g_item = QtGui.QTreeWidgetItem(t_item)
+                g_item = QTreeWidgetItem(t_item)
                 g_item.setText(0, qry.value(2))
                 g_item.setCheckState(0,Qt.Unchecked)
                 g_item.setFlags(g_item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)  
 
-            e_item = QtGui.QTreeWidgetItem(g_item)
+            e_item = QTreeWidgetItem(g_item)
             e_item.setText(0, qry.value(3))
             e_item.setData(1,0,qry.value(4)) # Key in unsichtbare 2. Spalte
             e_item.setCheckState(0,Qt.Unchecked)
@@ -289,7 +303,7 @@ class uiExplorer(QtGui.QDialog, FORM_CLASS):
         # 1. Test ob Ebenen gewählt
         view = self.twCaigosLayer
         Liste=[]
-        it = QtGui.QTreeWidgetItemIterator(view,QtGui.QTreeWidgetItemIterator.Checked)
+        it = QTreeWidgetItemIterator(view,QTreeWidgetItemIterator.Checked)
         while it.value():
             item = it.value()
             if item.text(1):
@@ -299,26 +313,25 @@ class uiExplorer(QtGui.QDialog, FORM_CLASS):
             msgbox("Es wurden keine Ebenen zur Darstellung  ausgewählt") 
             return
         # 2. Test ob alle Parameter gesetzt
+        # 1. Codepage muss eigentlich nicht kontolliert werden
+        # 2. Test ob ZielPfad vorhanden
         if self.chkSHPexp.isChecked():
-            # 1. Codepage muss eigentlich nicht kontolliert werden
-            # 2. Test ob ZielPfad vorhanden
-            if self.chkSHPexp.isChecked():
-                ZielPfad=self.txtZielPfad.text()                
-                if ZielPfad == "":
-                    QMessageBox.critical(None, u"SHP-Zielpfad nicht gesetzt", u"Bitte Shape-Zielpfad wählen") 
-                    return
-                if ZielPfad[:-1] <> "/" and ZielPfad[:-1] <> "\\":
-                        ZielPfad=ZielPfad + "/"
-                if not os.path.exists(ZielPfad):
-                    QMessageBox.critical(None, u"Shape Zielpfad nicht gefunden", ZielPfad)
-                    return
+            ZielPfad=self.txtZielPfad.text()                
+            if ZielPfad == "":
+                QMessageBox.critical(None, u"SHP-Zielpfad nicht gesetzt", u"Bitte Shape-Zielpfad wählen") 
+                return
+            if ZielPfad[:-1] != "/" and ZielPfad[:-1] != "\\":
+                    ZielPfad=ZielPfad + "/"
+            if not os.path.exists(ZielPfad):
+                QMessageBox.critical(None, u"Shape Zielpfad nicht gefunden", ZielPfad)
+                return
         super(uiExplorer, self).accept() # Fenster schließen
             
     # Die Zeilen mit ausgewaehlter Checkox ausgeben
     def Ausgeben(self):
         view = self.twCaigosLayer
         Liste=[]
-        it = QtGui.QTreeWidgetItemIterator(view,QtGui.QTreeWidgetItemIterator.Checked)
+        it = QTreeWidgetItemIterator(view,QTreeWidgetItemIterator.Checked)
         while it.value():
             item = it.value()
             if item.text(1):
@@ -339,12 +352,12 @@ class uiExplorer(QtGui.QDialog, FORM_CLASS):
         else:
             # es wurde Schließen gedrückt
             return None,None,None,None,None,None,None,None
-            #QtGui.QMessageBox.information( None,'','Abbruch') 
+            #QMessageBox.information( None,'','Abbruch') 
 
         
 if __name__ == "__main__":
     from clsDatenbank import *
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     clsdb = pgDataBase()
     con=clsdb.GetConnString()
     db=clsdb.OpenDatabase(con) 
@@ -354,12 +367,12 @@ if __name__ == "__main__":
         cls = uiExplorer()
 
         guiListe = cls.LayerErmitteln(rootname, qry)
-        print guiListe
+        print (guiListe)
         """
         if guiListe:
             str1 = "','".join(guiListe)
             str1 = "'" + str1 + "'"
-            QtGui.QMessageBox.information( None,u'Folgende Ebenen wurden gewählt',str1)
+            QMessageBox.information( None,u'Folgende Ebenen wurden gewählt',str1)
         """
 
     

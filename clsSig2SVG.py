@@ -27,7 +27,10 @@
 """
 
 import os.path
-from fnc4all import *
+try:
+    from fnc4all import *
+except:
+    from .fnc4all import *
 import re
 import codecs
 
@@ -90,7 +93,7 @@ def Sig2SVG (qDat, zDat, Fill=False):
                 return "1" # str(float(w0)/100 *2)
             
         def neg(w, h):
-            if w.find("/") <> -1:
+            if w.find("/") != -1:
                 v = w.split("/")
                 d = float(v[1])
                 v[1] = str(h - d)
@@ -194,7 +197,7 @@ if __name__ == "__main__":
         #printlog (qDat.replace("/","\\"))
         #printlog (zDat.replace("/","\\"))
         Sig2SVG (qDat,zDat)
-        print getFehler()
+        #print (getFehler())
         # ============
         import codecs
 

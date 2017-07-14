@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- clsCaigosConnector
+ clsCaigosConnector: Gemeinsame Basis für QGIS2 und QGIS3
+  01.07.2017 V0.4
+  - CheckVerbDaten umgebaut
+  
  31.08.16
- - Shapeexport integriert
+  - Shapeexport integriert
  
  17.06.2016 V0.2
   - Darstellungsgruppe eingebaut
@@ -28,27 +31,51 @@
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import *
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from fnc4all import *
-# Initialize Qt resources from file resources.py
-import resources
+try:
+    from PyQt5.QtCore import *
+    from PyQt5.QtGui import *
+    from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
+    from PyQt5.QtWidgets import *
+    myqtVersion = 5
+except:
+    from PyQt4.QtCore import *
+    from PyQt4.QtGui import *
+    myqtVersion = 4
+    
+try:
+    if myqtVersion == 4:
+        from resourcesqt4 import *
+    else:
+        from resources import *
+    from fnc4all import *
+    from uiExplorer import uiExplorer
+    from uiAbout import uiAbout
+    from uiDBAnbindung import uiDBAnbindung
+    from clsDatenbank import *
+    from clsQGISAction import clsQGISAction
 
-# Import der 3 Einzelmodule
-from uiExplorer import uiExplorer
-from uiAbout import uiAbout
-from uiDBAnbindung import uiDBAnbindung
+except:
+    if myqtVersion == 4:
+        from .resourcesqt4 import *
+    else:
+        from .resources import *
+        
+    from .fnc4all import *
+    from .uiExplorer import uiExplorer
+    from .uiAbout import uiAbout
+    from .uiDBAnbindung import uiDBAnbindung
+    from .clsDatenbank import *
+    from .clsQGISAction import clsQGISAction
 
-from clsDatenbank import *
-from clsQGISAction import clsQGISAction
+
 
 import webbrowser
 import os
 import getpass
 
 
-if fncDebugMode():
-    from clsDebug import clsDebug
+#if fncDebugMode():
+#    from clsDebug import clsDebug
 
 class clsCaigosConnector:
     """QGIS Plugin Implementation."""
@@ -212,7 +239,7 @@ class clsCaigosConnector:
         if clsdb.CheckVerbDaten(None,None,None,None, True):
             db=clsdb.CurrentDB()
         else:
-             db=None  
+            db=None  
         
         cls=uiExplorer()
         if db :
@@ -222,20 +249,20 @@ class clsCaigosConnector:
             if guiListe:
                 InStr = "','".join(guiListe)
                 InStr = "'" + InStr + "'"
-                # QtGui.QMessageBox.information( None,'Datenbankzugriff',InStr) 
+                # QMessageBox.information( None,'Datenbankzugriff',InStr) 
                 qry = clsdb.OpenRecordset(db, clsdb.sqlStrukAlleLayer(InStr,'DESC'))
 
                 pri_gisdb = clsdb.OpenRecordset(db, clsdb.sqlAlleLayerByPriAndGISDB(User,InStr))
 
                 c = clsQGISAction()
-                c.QGISBaum(db,User,projekt,pri_gisdb,qry, bGenDar, bPrjNeu,iGruppe, b3DDar, bDBTab, bSHPexp, bLeer)
+                c.QGISBaum(clsdb,User,projekt,pri_gisdb,qry, bGenDar, bPrjNeu,iGruppe, b3DDar, bDBTab, bSHPexp, bLeer)
 
                 #while (qry.next()):
                 #    printlog(qry.value(3))
 
         else:          
-            reply = QtGui.QMessageBox.question(None, 'Fehler beim Datenbankanbindung',"Soll der Dialog \n'CAIGOS PostGIS Datenbankverbindung anpassen'\naufgerufen werden", QtGui.QMessageBox.Yes |  QtGui.QMessageBox.No, QtGui.QMessageBox.No)
-            if reply == QtGui.QMessageBox.Yes:
+            reply = QMessageBox.question(None, 'Fehler beim Datenbankanbindung',"Soll der Dialog \n'CAIGOS PostGIS Datenbankverbindung anpassen'\naufgerufen werden", QMessageBox.Yes |  QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
                 self.SetzeDBAnbindung()
 
     def UTFTesten(self):
@@ -258,7 +285,7 @@ class clsCaigosConnector:
             #if guiListe:
             #    InStr = "','".join(guiListe)
             #    InStr = "'" + InStr + "'"
-                # QtGui.QMessageBox.information( None,'Datenbankzugriff',InStr) 
+                # QMessageBox.information( None,'Datenbankzugriff',InStr) 
             qry = clsdb.OpenRecordset(db, clsdb.sqlStrukAlleLayer(None,'DESC'))
             #print clsdb.sqlStrukAlleLayer(None,'DESC')
             pri_gisdb = clsdb.OpenRecordset(db, clsdb.sqlAlleLayerByPriAndGISDB(User,None))
@@ -278,12 +305,12 @@ if __name__ == "__main__":
         """
         while (qry4pri.next()):
             lName=toUTF8(qry4pri.value(0))
-            if lName <> qry4pri.value(0):
+            if lName != qry4pri.value(0):
                 printlog (qry4pri.value(0) + ": UTF Korrektur vorm Erstellen notwendig")
                 xxx
         while (qry.next()):
             lName=toUTF8(qry.value(3))
-            if lName <> qry.value(3):
+            if lName != qry.value(3):
                 printlog (qry.value(3) + ": UTF Korrektur nach Erstellen notwendig")
                 xxx
         """

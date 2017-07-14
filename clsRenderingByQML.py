@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- clsRenderingByQML
+ clsRenderingByQML: Gemeinsame Basis für QGIS2 und QGIS3
+  01.07.2017 V0.4
+   - Erweiterung auf Caigos 2016 dadurch Umstellung von PRIV: auf "PUB:"
+     Im 11.2 gibt es PRIV: und PUB: in CAIGOS 2016 nur noch PUB:. 
+     Bisher wurden in 11.2 nur die PRIV: bearbeitet, das wird der Einfachkeit halber so beibehalten
+     und für 2016 duch PUB ersetzt     
+ 
   05.10.2016 V0.3
   - Kreis jetzt auch mit attributierter Darstellung
   - Text-Referenzlinie mit Darstellung
@@ -41,10 +47,15 @@ import xml.dom.minidom as dom
 import tempfile
 
 from qgis.core import * 
-from clsDatenbank import *
-from fnc4all import *
-from clsSig2SVG import *
-
+try:
+    from clsDatenbank import *
+    from fnc4all import *
+    from clsSig2SVG import *
+except:
+    from .clsDatenbank import *
+    from .fnc4all import *
+    from .clsSig2SVG import *
+    
 glTransparentsWert= 200
 
 def fncAktRecToText(rsAtt):
@@ -122,14 +133,14 @@ astyle0	astyle1	astyle2	astyle3	astyle4	astyle5	astyle6	astyle7	astyle8	astyle9
 def fncLongToRGB (Farbe):
     flist=[]
     flist.append (Farbe & 255)
-    flist.append ((Farbe / 256) & 255)
-    flist.append (Farbe / 65536)
+    flist.append ((Farbe // 256) & 255)
+    flist.append (Farbe // 65536)
     return flist
 
 def fncLongTosRGB (Farbe,Transparent=False):
     s=str(Farbe & 255)
-    s=s+","+str((Farbe / 256) & 255)
-    s=s+","+str (Farbe / 65536) 
+    s=s+","+str((Farbe // 256) & 255)
+    s=s+","+str (Farbe // 65536) 
     if Transparent:
         s=s+","+ str(glTransparentsWert)
     return s
@@ -157,6 +168,27 @@ def EineRolle(root_rule,Rollenname,Von, Bis):
         rule.setScaleMaxDenom(Bis)
         return rule
 
+def Pfade4Signatur (clsdb,sigpath,signame):
+    sigPfad=clsdb.GetCGSignaturPfad()
+    svgPfad=clsdb.GetQSVGSignaturPfad() 
+    
+    if sigpath == "":
+        if clsdb.GetCGVersion() == 0:
+            sigpath="PRIV:"
+            addHinweis("Kein Signaturverzeichnis : " + signame )
+        else:
+            addFehler("Kein Signaturverzeichnis : " + signame )
+            
+    cgPfad=sigpath.replace("PRIV:",sigPfad).replace("PUB:",sigPfad)
+    qPfad=sigpath.replace("PRIV:",svgPfad).replace("PUB:",sigPfad)
+
+    
+    qDat= cgPfad + signame  + ".sig"
+    qDat=qDat.replace("\\","/")
+    zDat = qPfad + signame + ".svg"
+    zDat=zDat.replace("\\","/")
+    return  qPfad, qDat, zDat
+    
 def EinfacheBeschriftungZeichnen(clsdb, db, qLayer,AktDefName, Group):
         rsAtt=clsdb.OpenRecordset(db,clsdb.sqlAttParam4IDandArt(3, AktDefName, Group))
         symbol = QgsSymbolV2.defaultSymbol(QGis.Point)
@@ -197,19 +229,8 @@ def EinSchraffurPunktFuellung (eSym,db,clsdb,AttID,Win,sigPfad, svgPfad,Num, Gro
     rsParam=clsdb.OpenRecordset(db,clsdb.sqlAttParam4IDandArt(0, AttID , Group))
     rsParam.next()
     # ===================================       SVG erzeugen            ===================================================
-    sigpath=fncfield(rsParam,"sigpath")
-    if sigpath == "":
-        sigpath="PRIV:"
-    signame=fncfield(rsParam,"signame") 
-    cgPfad=sigpath.replace("PRIV:",sigPfad)
-    qPfad=sigpath.replace("PRIV:",svgPfad)
+    qPfad,qDat,zDat = Pfade4Signatur(clsdb,fncfield(rsParam,"sigpath"),fncfield(rsParam,"signame"))
     subMkPfad (qPfad, True)
-
-    qDat= cgPfad + signame  + ".sig"
-    qDat=qDat.replace("\\","/")
-    zDat = qPfad + signame + ".svg"
-    zDat=zDat.replace("\\","/")
-
     Sig2SVG (qDat,zDat)
     
     # ===============================================================================================================
@@ -237,29 +258,16 @@ def EinSchraffurPunktFuellung (eSym,db,clsdb,AttID,Win,sigPfad, svgPfad,Num, Gro
 
     
     return eLayer   
-
+    
 def EinLinienPunktMarker (eSym,db,clsdb,AttID,qPosition, sUnit, Group, Abstand=None, Start=0, Offset = 0):
-    try:
+    #try:
         rsParam=clsdb.OpenRecordset(db,clsdb.sqlAttParam4IDandArt(0, AttID , Group))
         rsParam.next()
-        
-        sigPfad=clsdb.GetCGProjektPfad() + "/signatur/"
-        svgPfad=clsdb.GetQSVGProjektPfad()
 
         # ===================================       SVG erzeugen            ===================================================
-        sigpath=fncfield(rsParam,"sigpath")
-        if sigpath == "":
-            sigpath="PRIV:"
-        signame=fncfield(rsParam,"signame") 
-        cgPfad=sigpath.replace("PRIV:",sigPfad)
-        qPfad=sigpath.replace("PRIV:",svgPfad)
+        qPfad,qDat,zDat = Pfade4Signatur(clsdb,fncfield(rsParam,"sigpath"),fncfield(rsParam,"signame"))
+        
         subMkPfad (qPfad, True)
-
-        qDat= cgPfad + signame  + ".sig"
-        qDat=qDat.replace("\\","/")
-        zDat = qPfad + signame + ".svg"
-        zDat=zDat.replace("\\","/")
-
         Sig2SVG (qDat,zDat)
         
         # ===============================================================================================================
@@ -317,12 +325,15 @@ def EinLinienPunktMarker (eSym,db,clsdb,AttID,qPosition, sUnit, Group, Abstand=N
         prop['vertical_anchor_point']='1'    
         for p in prop:
             ET.SubElement(eLayer, "prop",k=p,v=prop[p])    
+        """
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         subLZF ("EinLinienPunktMarker (AttID=" + AttID + ")")
+        return False
     
-    return eLayer   
+    return eLayer  
+"""    
 
 def EineSchraffurLinie (eSym,rsAtt,Num, Group):
     if fncfield(rsAtt,"fsalign") == 1:
@@ -475,13 +486,13 @@ def EineStreckeXMLAttributieren (eSymbols, symNum,db,clsdb,qTyp, LinArt, AktAttI
         # Liniensymbole am Ende schreiben
         # Eventuelle Liniensigaturen
         sUnit='MapUnit' if fncfield(rsParam,"scrresize") == "J" else "MM"
-        if fncfield(rsParam,"sigbeginattr") <> "{00000000-0000-0000-0000-000000000000}":    
+        if fncfield(rsParam,"sigbeginattr") != "{00000000-0000-0000-0000-000000000000}":    
             EinLinienPunktMarker (eSym,db,clsdb,fncfield(rsParam,"sigbeginattr") ,'firstvertex',sUnit, Group)
-        if fncfield(rsParam,"sigendattr") <> "{00000000-0000-0000-0000-000000000000}":    
+        if fncfield(rsParam,"sigendattr") != "{00000000-0000-0000-0000-000000000000}":    
             EinLinienPunktMarker (eSym,db,clsdb,fncfield(rsParam,"sigendattr") ,'lastvertex',sUnit, Group)
-        if fncfield(rsParam,"sigmiddleattr") <> "{00000000-0000-0000-0000-000000000000}":    
+        if fncfield(rsParam,"sigmiddleattr") != "{00000000-0000-0000-0000-000000000000}":    
             EinLinienPunktMarker (eSym,db,clsdb,fncfield(rsParam,"sigmiddleattr") ,'centralpoint',sUnit, Group)
-        if fncfield(rsParam,"linesigattr") <> "{00000000-0000-0000-0000-000000000000}":    
+        if fncfield(rsParam,"linesigattr") != "{00000000-0000-0000-0000-000000000000}":    
             EinLinienPunktMarker (eSym,db,clsdb,fncfield(rsParam,"linesigattr") ,'egal',sUnit, Group,fncfield(rsParam,"linesigofs"),fncfield(rsParam,"linesigbegin"),fncfield(rsParam,"linesigofsline"))
                
     return eSymbols
@@ -586,21 +597,10 @@ def EineFlaecheXMLFuellstil (eSymbols, symNum,qTyp,rsParam) :
         
     return  eSym
 
-def EinenPunktXMLAttributieren (eSymbols, symNum,  rsParam, sigPfad, svgPfad ) :
+def EinenPunktXMLAttributieren (eSymbols, symNum,  rsParam, clsdb ) :
     # ===================================       SVG erzeugen            ===================================================
-    sigpath=fncfield(rsParam,"sigpath")
-    if sigpath == "":
-        sigpath="PRIV:"
-    signame=fncfield(rsParam,"signame") 
-    cgPfad=sigpath.replace("PRIV:",sigPfad)
-    qPfad=sigpath.replace("PRIV:",svgPfad)
+    qPfad,qDat,zDat = Pfade4Signatur(clsdb,fncfield(rsParam,"sigpath"),fncfield(rsParam,"signame"))
     subMkPfad (qPfad, True)
-
-    qDat= cgPfad + signame  + ".sig"
-    qDat=qDat.replace("\\","/")
-    zDat = qPfad + signame + ".svg"
-    zDat=zDat.replace("\\","/")
-
     Sig2SVG (qDat,zDat)
     
     # ===================================   Darstellung definieren    ===================================================        
@@ -863,7 +863,7 @@ class clsRenderingByQML():
                     qmap["scalemaxdenom"] = str(fncfield(rsAtt,"MMax"))
                     if cgEbenenTyp == 3:
                         qmap["description"] = str(fncfield(rsAtt,"AttNum")) + ":" + fncfield(rsAtt,"ATTname")
-                        #if fncfield(rsAtt,"lineattr") <> "{00000000-0000-0000-0000-000000000000}":
+                        #if fncfield(rsAtt,"lineattr") != "{00000000-0000-0000-0000-000000000000}":
                         #    printlog (fncfield(rsAtt,"lineattr"))
                     else:
                         qmap["label"] = str(fncfield(rsAtt,"AttNum")) + ":" + fncfield(rsAtt,"ATTname")
@@ -874,7 +874,7 @@ class clsRenderingByQML():
                     if cgEbenenTyp == 0:
                         qTyp=qLayer.geometryType()
                         #                                      (eSymbols, symNum,  rsParam, sigPfad, svgPfad )
-                        EinenPunktXMLAttributieren (eSymbols, symNum,  rsAtt,clsdb.GetCGProjektPfad() + "/signatur/",clsdb.GetQSVGProjektPfad())
+                        EinenPunktXMLAttributieren (eSymbols, symNum,  rsAtt,clsdb)
     
 
                     if cgEbenenTyp == 1: # Strecke 
@@ -918,22 +918,22 @@ class clsRenderingByQML():
                         # Im Gegensatz zum Drehwinkel an Punkten, schein hier der Winkel in die gleiche Richtung
                         # wie im QGIS zu laufen   
                         # eine 2. Linie ist zur ersten 90 ° versetzt und wird nur gezeichnet, wenn eine erste Linie definiert
-                        if fncfield(rsAtt,"fslineattr1") <> "{00000000-0000-0000-0000-000000000000}":
+                        if fncfield(rsAtt,"fslineattr1") != "{00000000-0000-0000-0000-000000000000}":
                             s1=EineSchraffurLinie (eSym,rsAtt,1, Group)
                             EineStreckeXMLAttributieren (None, 0,  db,clsdb,qTyp, "line",fncfield(rsAtt,"fslineattr1"),Group,0,s1 )
-                            if fncfield(rsAtt,"fslineattr2") <> "{00000000-0000-0000-0000-000000000000}":
+                            if fncfield(rsAtt,"fslineattr2") != "{00000000-0000-0000-0000-000000000000}":
                                 s1=EineSchraffurLinie (eSym,rsAtt,2, Group) 
                                 EineStreckeXMLAttributieren (None, 0,  db,clsdb,qTyp, "line",fncfield(rsAtt,"fslineattr2"),Group,0,s1 )
 
                         # 3.2. Signaturfüllung
                         #      funktioniert nicht 100%, da der Abstand zwischen den einzelnen Signaturen (woffsetmm, hoffsetmm) nicht einstellbar ist
-                        if fncfield(rsAtt,"pointattr1") <> "{00000000-0000-0000-0000-000000000000}":
+                        if fncfield(rsAtt,"pointattr1") != "{00000000-0000-0000-0000-000000000000}":
                             #  EinSchraffurPunktFuellung (eSym,db,clsdb,   AttID, sWin,                      sigPfad,                                svgPfad,                  Num, Group)
                             sWin=abs(360-fncfield(rsAtt,"alpha1"))
-                            l1=EinSchraffurPunktFuellung (eSym,db,clsdb,fncfield(rsAtt,"pointattr1"),sWin,clsdb.GetCGProjektPfad() + "/signatur/",clsdb.GetQSVGProjektPfad(),1, Group)
-                            if fncfield(rsAtt,"pointattr2") <> "{00000000-0000-0000-0000-000000000000}":
+                            l1=EinSchraffurPunktFuellung (eSym,db,clsdb,fncfield(rsAtt,"pointattr1"),sWin,clsdb.GetCGSignaturPfad(),clsdb.GetQSVGSignaturPfad(),1, Group)
+                            if fncfield(rsAtt,"pointattr2") != "{00000000-0000-0000-0000-000000000000}":
                                 sWin=abs(360-fncfield(rsAtt,"alpha2"))
-                                l1=EinSchraffurPunktFuellung (eSym,db,clsdb,fncfield(rsAtt,"pointattr2"),sWin,clsdb.GetCGProjektPfad() + "/signatur/",clsdb.GetQSVGProjektPfad(),1, Group)
+                                l1=EinSchraffurPunktFuellung (eSym,db,clsdb,fncfield(rsAtt,"pointattr2"),sWin,GetCGSignaturPfad(),clsdb.GetQSVGSignaturPfad(),1, Group)
                         
                         # 4. Randlinie
                         EineStreckeXMLAttributieren (None, symNum, db,clsdb,qTyp, "outline", fncfield(rsAtt,"lineattr"),Group,fncfield(rsAtt,"AttNum"),eSym) 
@@ -956,22 +956,24 @@ class clsRenderingByQML():
             AktDefName=clsdb.AttDefName4ID(db, AktDefID)
             EinfacheBeschriftungZeichnen(clsdb, db, qLayer,AktDefID, Group)
             #errlog(Fehler)
-        
-        
+
         tree = ET.ElementTree(eRoot)
         if fncDebugMode():
             tempName="d:/tar/mytest1.qml"
         else:
             tempName=tempfile.gettempdir() + "/{D5E6A1F8-392F-4241-A0BD-5CED09CFABC7}.qml"
         f = open(tempName, "w")
-
+        
         sXML=dom.parseString(
                     ET.tostring(
                       tree.getroot(),
                       'utf-8')).toprettyxml(indent="    ")
-        f.write(sXML.encode('utf8'))
+        if myqtVersion == 4:
+            f.write(sXML.encode('utf8'))
+        else:
+            f.write(sXML)
         f.close()
-
+        
         qLayer.loadNamedStyle(tempName)
         if not fncDebugMode():
             os.remove(tempName)
@@ -980,4 +982,4 @@ class clsRenderingByQML():
 if __name__ == "__main__":
     from qgis.utils import *
     app = QApplication(sys.argv)
-    dummy=""
+    print (myqtVersion)
