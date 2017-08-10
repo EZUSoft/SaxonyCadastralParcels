@@ -14,4 +14,4 @@ Optionaler Export nach DXF
 Bedienung:
 Nach Einbinden des PlugIns sind die Funktionen unter dem Menüpunkt "Web" --> "Flurstücke Sachsen" verfügbar.
 
-[Homepage](http://forum.makobo.de/viewtopic.php?f=3&t=38)
+[Homepage](http://forum.makobo.de/viewtopic.php?f=3&t=48)
