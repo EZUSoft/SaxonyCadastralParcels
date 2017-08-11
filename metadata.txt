@@ -1,0 +1,52 @@
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=Flurstuecke und Gemarkungen Sachsen
+qgisMinimumVersion=2.8
+description=Download, Darstellung und Konvertierung der Inspire Flurstücke Sachsen 
+
+author=Mike Blechschmidt EZUSoft
+email=qgis@makobo.de
+version=0.1.0
+changelog=
+        11.08.2018 V0.1:
+	-  release first version
+
+
+
+about=Remark:
+      The plugin worked only data from Germany (Saxony). Thatswhy the plugin is only available in German language.
+      . 
+      - Download der Inspire Daten vom GeoSN 
+      - Darstellung Flurstücke und Flurstücksnummern
+      - Optionale Abspeicherung als Shape + Darstellung
+      - Optionaler Export nach DXF
+      .
+      Bedienung:
+      Nach Einbinden des PlugIns sind die Funktionen unter dem Menüpunkt "Web" --> "Flurstuecke Sachsen" verfügbar.
+
+tracker=https://github.com/EZUSoft/SaxonyCadastralParcels/issues
+repository=https://github.com/EZUSoft/SaxonyCadastralParcels
+homepage=http://www.makobo.de/links/Forum_SaxonyCadastralParcels.php
+# End of mandatory metadata
+
+# Recommended items:
+
+
+# Tags are comma separated with spaces allowed
+tags=Flurstücke, Sachsen, Inspire 
+category=Vector
+icon=icon.png
+
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
