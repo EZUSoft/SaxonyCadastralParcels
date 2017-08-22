@@ -2,6 +2,8 @@
 """
 /***************************************************************************
  uiFlurst4SN
+    V0.1.1
+    - Anpassung 22.08.17: keine führende 0 bei Gemarkungen im Downloadname
 
                                  A QGIS plugin
  Download Flurstücke vom GeoSN, ADarstellung QGIS und Konvertierung nach DXF
@@ -114,8 +116,8 @@ class uiFlurst4SN(QtGui.QDialog, FORM_CLASS):
             tvGemark.setCheckState(0, Qt.Unchecked)  
             
             zip = Zeile[4].strip()
-            zip = zip +' (' + Zeile[3].strip() + ').zip'
-            
+            # Anpassung 22.08.17: keine führende 0 bei Gemarkungen
+            zip = zip +' (' + str(int(Zeile[3])).strip() + ').zip'
             zip = toUTF8(zip)
             zip = zip.replace("/","_")   
             tvGemark.setData(1,0,zip)

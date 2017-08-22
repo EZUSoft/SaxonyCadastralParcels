@@ -13,9 +13,10 @@ description=Download, Darstellung und Konvertierung der Inspire Flurstücke Sach
 
 author=Mike Blechschmidt EZUSoft
 email=qgis@makobo.de
-version=0.1.0
+version=0.1.1
 changelog=
-        11.08.2018 V0.1:
+22.08.17 V0.1.1: keine führende 0 bei Gemarkungen im Downloadname
+        11.08.2018 V0.1.0:
 	-  release first version
 
 
