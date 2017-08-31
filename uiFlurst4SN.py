@@ -2,6 +2,8 @@
 """
 /***************************************************************************
  uiFlurst4SN
+    V0.1.2
+    - Anpassung 31.08.17: "." durch "_" bei Gemarkungen im Downloadname ersetzen
     V0.1.1
     - Anpassung 22.08.17: keine führende 0 bei Gemarkungen im Downloadname
 
@@ -115,7 +117,9 @@ class uiFlurst4SN(QtGui.QDialog, FORM_CLASS):
             tvGemark.setText(0, Zeile[4].strip() +' (' + Zeile[3].strip() + ')')
             tvGemark.setCheckState(0, Qt.Unchecked)  
             
+            # Anpassung 31.08.17: "." durch "_" bei Gemarkungen im Downloadname ersetzen
             zip = Zeile[4].strip()
+            zip = zip.replace(".","_")
             # Anpassung 22.08.17: keine führende 0 bei Gemarkungen
             zip = zip +' (' + str(int(Zeile[3])).strip() + ').zip'
             zip = toUTF8(zip)
