@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-  09.08.2017: Übernahme aus CAIGOS-Plugin
+  13.02.2018: fncDebugMode musste hier raus, da in Projektdatei definiert
+  26.01.2018: alle PlugIn's abgeglichen
+
 /***************************************************************************
  fnc4all: Gemeinsame Basis für QGIS2 und QGIS3
-
                                  A QGIS plugin
- Download Flurstücke vom GeoSN, ADarstellung QGIS und Konvertierung nach DXF
-                             -------------------
-        begin                : 2017-08-08
+ CAIGOS-PostgreSQL/PostGIS in QGIS darstellen
+                              -------------------
+        begin                : 2016-04-18
         git sha              : $Format:%H$
-        copyright            : (C) 2017 by Mike Blechschmidt EZUSoft 
-        email                : qgis@makobo.de
+        copyright            : (C) 2016 by EZUSoft
+        email                : qgis (at) makobo.de
  ***************************************************************************/
 
 /***************************************************************************
@@ -22,6 +23,14 @@
  *                                                                         *
  ***************************************************************************/
 """
+# Einbau in QGIS per
+# >> sys.path.append('C:/Users/.../.qgis3/python/plugins/<plugin-name>')
+# >> sys.path.append('C:/Users/.../AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/SaxonyCadastralParcels')
+# >> from fnc4all import *
+# Aktualisierung python 3.x per
+# >> import importlib
+# >> importlib.reload(fnc4all)
+
 from qgis.core import *
 from qgis.utils import os, sys
 from itertools import cycle
@@ -34,6 +43,7 @@ try:
     def myQGIS_VERSION_INT():
         return Qgis.QGIS_VERSION_INT
     myqtVersion = 5
+
 except:
     from PyQt4 import QtGui
     from PyQt4.QtCore import QSettings
@@ -42,7 +52,7 @@ except:
         return QGis.QGIS_VERSION_INT
     myqtVersion = 4
 
-# es kommt (vermtlich bei gemischten Installationen) vor, dass QString nicht verfügbar
+# es kommt (verumtlich bei gemischten Installationen) vor, dass QString nicht verfügbar
 try:
     from PyQt4.QtCore import QString
 except ImportError:
@@ -55,28 +65,67 @@ import os
 import getpass
 import traceback
 import tempfile
+import codecs
 from glob import glob
 
+######################### QGIS TreeNode Handling ################################
+def NodeFindByFullName (FullNode, Start = None):
+    if Start is None: Start=QgsProject.instance().layerTreeRoot()
+    if type(FullNode) == type([]):
+        sNode=FullNode
+    else:
+        sNode=FullNode.split("\t")
+    Gefunden=None
+    for node in Start.children():
+        if str(type(node))  == "<class 'qgis._core.QgsLayerTreeGroup'>":
+            if node.name() == sNode[0]:
+                if len(sNode) > 1:
+                    Gefunden = NodeFindByFullName(sNode[1:], node)
+                else:
+                    Gefunden = node
+    return Gefunden             
 
-#### Spezialteil CAIGOS Konverter ####
-progVersion = "V 0.1"
-def tr( message):
-    return message  # hier braucht es keine Übersetzung
-    
-def fncCGFensterTitel(intCG = None):
-    s = QSettings( "EZUSoft", "CAIGOS-Konnektor" )
-    sVersion = "-"
-    if not intCG :
-        intCG = int(s.value( "cgversion",-1))
-    if intCG == 0:
-        sVersion = "11.2"
-    if intCG == 1:        
-        sVersion = "2016"
-    return u"CAIGOS Importer für Version " + sVersion + "   (Programmversion " + progVersion + ")"
-    
-def fncDebugMode(): 
-    return False
-######################################
+
+def NodeCreateByFullName (FullNode, Start = None):
+    # Rückgabewerte:
+    #   1.) Der Knoten
+    #   2.) Anzahl der neu angelegten Gruppen
+    ToDo=0
+    if Start is None: Start=QgsProject.instance().layerTreeRoot()
+    if type(FullNode) == type([]):
+        sNode=FullNode
+    else:
+        sNode=FullNode.split("\t")
+    Found=False
+    for node in Start.children():
+        if str(type(node))  == "<class 'qgis._core.QgsLayerTreeGroup'>":
+            if node.name() == sNode[0]: 
+                Found=True
+                break
+    if not Found: node=Start.addGroup(sNode[0]);ToDo=ToDo+1
+    if len(sNode) > 1:
+        node, ReToDo = NodeCreateByFullName (sNode[1:],node)
+        ToDo=ToDo+ReToDo
+    return node, ToDo
+
+def NodeRemoveByFullName (FullNode, Start = None):
+    if Start is None: Start=QgsProject.instance().layerTreeRoot()
+    if type(FullNode) == type([]):
+        sNode=FullNode
+    else:
+        sNode=FullNode.split("\t")
+    delNodeName=sNode[-1:][0]
+    if len(sNode) > 1:
+        parent=NodeFindByFullName (sNode[:-1],Start)
+    else:
+        parent=Start
+    if not parent: return False
+    for node in parent.children():
+        if str(type(node))  == "<class 'qgis._core.QgsLayerTreeGroup'>":
+            if node.name() == delNodeName:
+                parent.removeChildNode(node)
+                return True
+######################### QGIS TreeNode Handling ################################
 
 def toUnicode(text):
     # Python2 erzeugt           <type 'unicode'>
@@ -131,8 +180,8 @@ def subLZF(Sonstiges = None):
         QgsMessageLog.logMessage( traceback.format_exc().replace("\n",chr(9))+ (chr(9) + Sonstiges if Sonstiges else ""), u'EZUSoft:Error' )
     except:
         pass
-    if fncDebugMode():
-        QMessageBox.critical( None,tr("PlugIn Error") ,str(exc_type) + ": \nDatei: " + fname + "\nZeile: "+ str(tb_lineno) + ("\n" + Sonstiges if Sonstiges else ""))
+#    if fncDebugMode():
+#        QMessageBox.critical( None,tr("PlugIn Error") ,str(exc_type) + ": \nDatei: " + fname + "\nZeile: "+ str(tb_lineno) + ("\n" + Sonstiges if Sonstiges else ""))
     addFehler ("LZF:" + traceback.format_exc().replace("\n",chr(9)) + (chr(9) + Sonstiges if Sonstiges else ""))    
 
 def cut4view (fulltext,zeichen=1500,zeilen=15,anhang='\n\n                  ............. and many more .........\n'):
@@ -169,23 +218,16 @@ def msgbox (text):
     except:
         pass
 
-def errlog(text,p=None):
+def errlog(text, DebugMode = False):
     su= toUnicode(text)   
-    if fncDebugMode():
+    if DebugMode:
         QMessageBox.information(None, "DEBUG:", su)
     
     try:
         QgsMessageLog.logMessage( su, u'EZUSoft:Fehler' )
     except:
         pass
-def ClearDir(Verz):
-    for dat in glob(Verz +'*.*'):
-        try:
-            os.remove(dat)
-        except:
-            return False
-    return True
-    
+
 def EZUTempClear(All=None):
     Feh=0
     Loe=0
@@ -213,7 +255,7 @@ def EZUTempClear(All=None):
 
 def EZUTempDir():
     # 28.06.16 Replce() eingefügt, da processing.runalg sehr empfindlich hinsichtlich Dateinamen ist
-    tmp=(tempfile.gettempdir()).replace("\\","/") + "/{D5E6A1F8-392F-4241-A0BD-5CED09CFABC8}/"
+    tmp=(tempfile.gettempdir()).replace("\\","/") + "/{D5E6A1F8-392F-4241-A0BD-5CED09CFABC7}/"
     if not os.path.exists(tmp):
         os.makedirs(tmp) 
     if os.path.exists(tmp):
@@ -222,8 +264,8 @@ def EZUTempDir():
         QMessageBox.critical(None,tr("Program termination"), tr("Temporary directory\n%s\ncan not be created")%tmp)
         return None
 
-def debuglog(text,p=None):
-    if fncDebugMode():
+def debuglog(text,DebugMode=False):
+    if DebugMode:
         su= toUnicode(text)   
         try:
             QgsMessageLog.logMessage( su, 'EZUSoft:Debug' )
@@ -236,10 +278,6 @@ def hinweislog(text,p=None):
             QgsMessageLog.logMessage( su, 'AXF2Shape:Comments' )
         except:
             pass
-def fncBrowserID():
-    s = QSettings( "EZUSoft", "ADXF2Shape" )
-    s.setValue( "-id-", fncXOR(("ADXF2ShapeID=%02i%02i%02i%02i%02i%02i") % (time.localtime()[0:6])) )
-    return s.value( "–id–", "" ) 
     
 def printlog(text,p=None):
     su= toUnicode(text)        
@@ -303,12 +341,41 @@ def tryDecode(txt,sCharset):
     except:
         return '#decodeerror#'    
 
+def ClearDir(Verz):
+    for dat in glob(Verz +'*.*'):
+        try:
+            os.remove(dat)
+        except:
+            return False
+    return True
+    
 def fncMakeDatName (OrgName):
     v=OrgName.replace("\\","/")
     return v.replace("//","/")
+
+def qXDatAbsolute2Relativ(tmpDat, qlrDat, PathAbsolute):
+        # Absolute Pfade eine QRL/QGS in relative umschreiben
+        # bei Layern sucht zwar QGIS automatisch relativ wenn absolute fehlt, bei svg allerdings nicht
+        subPath=fncMakeDatName(PathAbsolute + "/") # encode('ascii') 4 Phython3
+        iDatNum = open(tmpDat)
+        oDatNum = open(qlrDat,"w")
+        for iZeile in iDatNum:
+            s1=iZeile.replace('source="' + subPath,'source="./') # Datenquellen
+            s1=s1.replace('k="name" v="' + subPath,'k="name" v="./') # svg-Dateien
+            s1=s1.replace('<datasource>' + subPath,'<datasource>./') # Datenquellen
+            oDatNum.write(s1)
+        iDatNum.close()
+        oDatNum.close()
+        os.remove(tmpDat)
         
 if __name__ == "__main__": 
-    app = QApplication(sys.argv)
+    fncMakeDatName("abc")
+    #tmpDat="X:/Downloaddienst/FnP/FnP-2.Entwurf.qlr"
+    #qlrDat="D:/tar/2.qlr"
+    #s="D:/Downloaddienst/FnP/"
+    #qXDatAbsolute2Relativ (tmpDat,qlrDat,s)
+    #app = QApplication(sys.argv)
+    #msgbox (u"Es wurden keine Ebenen zur Darstellung  ausgewählt")
     #app = QApplication(sys.argv)
     #if myQGIS_VERSION_INT ()  < 21200:
     #    print (myQGIS_VERSION_INT())    
@@ -317,7 +384,3 @@ if __name__ == "__main__":
     #addHinweis(u"ähgfhgiuq")
     #addHinweis("ähgfhgiuq")
     #msgbox("\n".join(getHinweis()))
-
-
-
-

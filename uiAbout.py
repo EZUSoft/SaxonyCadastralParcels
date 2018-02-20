@@ -4,7 +4,7 @@
  uiAbout
 
                                  A QGIS plugin
- Download Flurstücke vom GeoSN, ADarstellung QGIS und Konvertierung nach DXF
+ Download Flurstücke Sachsen und Thüringen, Darstellung in QGIS und Konvertierung nach DXF
                              -------------------
         begin                : 2017-08-08
         git sha              : $Format:%H$
@@ -22,10 +22,22 @@
  ***************************************************************************/
 """
 from qgis.utils import os, sys
-from PyQt4 import QtGui, uic
-from PyQt4.QtCore import  QDir
-from fnc4all import *
 
+try:
+    from PyQt5          import  uic, QtWidgets
+    from PyQt5.QtCore   import  QDir
+    from PyQt5.QtWidgets import QDialog
+except:
+    from PyQt4          import QtGui, uic
+    from PyQt4.QtCore   import  QDir
+    from PyQt4.QtGui    import QDialog
+
+try:
+    from fnc4all import *
+    from fnc4SaxonyCadastralParcels import *
+except:
+    from .fnc4all import *
+    from .fnc4SaxonyCadastralParcels import *
 
 
 d = os.path.dirname(__file__)
@@ -36,7 +48,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'uiAbout.ui'))
    
 
-class uiAbout(QtGui.QDialog, FORM_CLASS):  
+class uiAbout(QDialog, FORM_CLASS):  
     def __init__(self, parent=None):
         """Constructor."""
         super(uiAbout, self).__init__(parent)

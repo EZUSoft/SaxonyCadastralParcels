@@ -26,11 +26,11 @@
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
-    """Load clsFlurst4SN class from file clsFlurst4SN.
+    """Load clsFlurst4BL class from file clsFlurst4BL.
 
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
     #
-    from .clsFlurst4SN import clsFlurst4SN
-    return clsFlurst4SN(iface)
+    from .clsFlurst4BL import clsFlurst4BL
+    return clsFlurst4BL(iface)
