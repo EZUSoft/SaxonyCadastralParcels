@@ -1,5 +1,5 @@
 
-#Flurstuecke und Gemarkungen Sachsen und Thüringen
+#Flurstücke und Gemarkungen Sachsen und Thüringen
 
 Download, Darstellung und Konvertierung der Inspire Flurstücke Sachsen und Thüringen
 
