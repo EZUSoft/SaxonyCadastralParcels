@@ -90,6 +90,10 @@ def fncShapeDaten (sLandKenn):
             ['INSPIRE.cpParcelS','(Flst)',u'Flurstück','Flurstuecksgrenze', None, True, 'LABEL as Beschr',3,'Flurstuecksnummer']
             ,
             ['INSPIRE.cpZoningS','(Gem)','Gemarkung','Gemarkungsgrenze', None, True, 'LABEL as Beschr',50,'Gemarkungsname']
+            ,
+            ['INSPIRE_cpParcelS','(Flst)',u'Flurstück','Flurstuecksgrenze', None, True, 'LABEL as Beschr',3,'Flurstuecksnummer']
+            ,
+            ['INSPIRE_cpZoningS','(Gem)','Gemarkung','Gemarkungsgrenze', None, True, 'LABEL as Beschr',50,'Gemarkungsname']
         ]
     if sLandKenn == "TH": # in den Thüringer Dateinamen sind GemSchl und Flurnummer enthalten
         allshpList=[
