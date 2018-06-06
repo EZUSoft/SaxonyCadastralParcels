@@ -10,7 +10,7 @@
 name=Inspire Flurstuecke Sachsen und Thüringen
 qgisMinimumVersion=2.8
 qgisMaximumVersion=3.99
-description=Download, Darstellung und Konvertierung der Inspire Flurstücke Thüringen und Sachsen 
+description=Download, display and conversion of the Inspire parcels for the German states of Thuringia and Saxony
 
 author=Mike Blechschmidt EZUSoft
 email=qgis@makobo.de
