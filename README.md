@@ -1,7 +1,7 @@
 
 #Flurstücke und Gemarkungen Sachsen und Thüringen
 
-Download, Darstellung und Konvertierung der Inspire Flurstücke Sachsen und Thüringen
+Download, display and conversion of the Inspire parcels for the German states of Thuringia and Saxony 
 
 Remark:
 The plugin worked only data from Germany. Thatswhy the plugin is only available in German language.
