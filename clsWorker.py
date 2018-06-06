@@ -85,11 +85,11 @@ def fncShapeDaten (sLandKenn):
     # Layer "Datenbank"
     #    0          1          2               3               4            5                       6                       7               8
     # zipname, dateikürzel, NameImQGISBaum, LayernameInDXF, DXFFarbe, "FlächeNachLinie", Optional: Beschriftung, Optional: Höhe, Optional: BeschLayer
-    if sLandKenn == "SN": # in Sachsen sind die Dateinamen fest
+    if sLandKenn == "SN": # in Sachsen sind die Dateinamen fest (ab 01.06.18 Name mit Punkt INSPIRE_cpParcelS --> INSPIRE.cpParcelS)
         allshpList=[
-            ['INSPIRE_cpParcelS','(Flst)',u'Flurstück','Flurstuecksgrenze', None, True, 'LABEL as Beschr',3,'Flurstuecksnummer']
+            ['INSPIRE.cpParcelS','(Flst)',u'Flurstück','Flurstuecksgrenze', None, True, 'LABEL as Beschr',3,'Flurstuecksnummer']
             ,
-            ['INSPIRE_cpZoningS','(Gem)','Gemarkung','Gemarkungsgrenze', None, True, 'LABEL as Beschr',50,'Gemarkungsname']
+            ['INSPIRE.cpZoningS','(Gem)','Gemarkung','Gemarkungsgrenze', None, True, 'LABEL as Beschr',50,'Gemarkungsname']
         ]
     if sLandKenn == "TH": # in den Thüringer Dateinamen sind GemSchl und Flurnummer enthalten
         allshpList=[
