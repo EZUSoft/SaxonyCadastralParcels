@@ -2,7 +2,8 @@
 """
 /***************************************************************************
  clsWorker
-
+ 30.07.18:
+    Tabellennamen (Dateinamen) für sqlite maskiert: from \\\"' + Layer + '\\\""'
                                  A QGIS plugin
  Download Flurstücke Sachsen und Thüringen, Darstellung in QGIS und Konvertierung nach DXF
                              -------------------
@@ -109,7 +110,7 @@ def zipDownload(url,zipname):
     lok=EZUTempDir()
     # 14.02.18: In Thüringen klappt der Download oft erst im 2. Versuch
     #           obwohl ein Fehler kommt, hat der Download bei Tests trotzdem funktioniert
-    #           --> nur Fehler wer´fen, wenn beim 2. Versuch die Datei nicht da
+    #           --> nur Fehler werfen, wenn beim 2. Versuch die Datei nicht da
     try:
         urlretrieve ( url,lok+zipname)
         return lok+zipname
@@ -271,9 +272,9 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
         if Layer[0:2]=='*_': Layer=Layer[2:]
         korrSHPDatNam= unzipDir + Layer + '.shp'
         if sDat[ixF2L]:
-            opt = '-dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, ST_ExteriorRing(geometry) from ' + Layer + '"'
+            opt = '-dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, ST_ExteriorRing(geometry) from \\\"' + Layer + '\\\""'
         else:
-            opt = '-dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, geometry from ' + Layer + '"'
+            opt = '-dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, geometry from \\\"' + Layer + '\\\""'
         if myqtVersion == 4:
             pAntw=processing.runalg('gdalogr:convertformat', korrSHPDatNam , 10, opt , korrDXFDatNam  + '_' + str(i) +'.dxf')
         else:
@@ -284,7 +285,7 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
         
         if len(sDat) > 6:
             # es ist eine Beschriftung zu generieren
-            opt = '-lco SEPARATOR=TAB -lco GEOMETRY=AS_XYZ -dialect sqlite -sql "SELECT ST_PointOnSurface(geometry), ' + sDat[ixLabel] + ' from ' + Layer + '"'
+            opt = '-lco SEPARATOR=TAB -lco GEOMETRY=AS_XYZ -dialect sqlite -sql "SELECT ST_PointOnSurface(geometry), ' + sDat[ixLabel] + ' from \\\"' + Layer + '\\\""'
             if myqtVersion == 4:
                 pAntw=processing.runalg('gdalogr:convertformat', korrSHPDatNam , 12, opt , korrDXFDatNam  + '_' + str(i) +'.csv')
             else:
