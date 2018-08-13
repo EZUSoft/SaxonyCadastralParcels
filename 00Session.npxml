@@ -1,0 +1,14 @@
+<NotepadPlus>
+    <Session activeView="0">
+        <mainView activeIndex="6">
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1" startPos="0" endPos="0" selMode="0" lang="Python" encoding="-1" filename="C:\Users\junghans3\.qgis2\python\plugins\SaxonyCadastralParcels\uiFlurst4BL.py" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1" startPos="0" endPos="0" selMode="0" lang="Python" encoding="-1" filename="C:\Users\junghans3\.qgis2\python\plugins\SaxonyCadastralParcels\clsFlurst4BL.py" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1" startPos="0" endPos="0" selMode="0" lang="Python" encoding="-1" filename="C:\Users\junghans3\.qgis2\python\plugins\SaxonyCadastralParcels\clsWorker.py" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1" startPos="0" endPos="0" selMode="0" lang="Python" encoding="-1" filename="C:\Users\junghans3\.qgis2\python\plugins\SaxonyCadastralParcels\fnc4all.py" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1" startPos="0" endPos="0" selMode="0" lang="Python" encoding="-1" filename="C:\Users\junghans3\.qgis2\python\plugins\SaxonyCadastralParcels\fnc4SaxonyCadastralParcels.py" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="810" startPos="0" endPos="0" selMode="0" lang="Python" encoding="-1" filename="C:\Users\junghans3\.qgis2\python\plugins\SaxonyCadastralParcels\uiAbout.py" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="720" startPos="0" endPos="0" selMode="0" lang="Python" encoding="-1" filename="C:\Users\junghans3\.qgis2\python\plugins\SaxonyCadastralParcels\modDownload.py" />
+        </mainView>
+        <subView activeIndex="0" />
+    </Session>
+</NotepadPlus>

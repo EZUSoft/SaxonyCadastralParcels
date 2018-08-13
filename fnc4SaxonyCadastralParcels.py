@@ -33,7 +33,7 @@ def fncProgKennung():
     return "CAIGOS-Konnektor" + str(myqtVersion)
 
 def fncProgVersion():
-    return "V 0.2"
+    return "V 0.3"
     
 def fncDebugMode(): 
     return False

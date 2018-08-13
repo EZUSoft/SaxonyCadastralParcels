@@ -14,14 +14,14 @@ description=Download, display and conversion of the Inspire parcels for the Germ
 
 author=Mike Blechschmidt EZUSoft
 email=qgis@makobo.de
-version=0.2.2
-changelog=30.07.18 V0.2.2: Problem bei neuer ALKIS-Struktur des GeoSN beseitigt
+version=0.3.0
+changelog= 13.08.18 V0.3.0: Neue Downloadfunktion über QT mit QGIS-Proxy, HTTPS, Redirekt
+        30.07.18 V0.2.2: Problem bei neuer ALKIS-Struktur des GeoSN beseitigt
         06.06.18 V0.2.1: Anpassung an neue ALKIS-Struktur des GeoSN
         14.02.18 V0.2.0: Anpassung an QGIS3.xx; Erweiterung auf Thüringen
         31.08.17 V0.1.2: "." durch "_" bei Gemarkungen im Downloadname ersetzen
         22.08.17 V0.1.1: keine führende 0 bei Gemarkungen im Downloadname
-        11.08.2018 V0.1.0:
-         -  release first version
+        11.08.17 V0.1.0: release first version
 
 about=Remark:
       The plugin worked only data from Germany (Saxony, Thuringia). Thatswhy the plugin is only available in German language.

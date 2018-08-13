@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-/***************************************************************************
- clsWorker
  30.07.18:
     Tabellennamen (Dateinamen) für sqlite maskiert: from \\\"' + Layer + '\\\""'
+/***************************************************************************
+ clsWorker
+
                                  A QGIS plugin
  Download Flurstücke Sachsen und Thüringen, Darstellung in QGIS und Konvertierung nach DXF
                              -------------------
@@ -52,8 +53,10 @@ except:
 
 try:
     from fnc4all import *
+    from modDownload import DownLoadOverQT
 except:
     from .fnc4all import *
+    from .modDownload import DownLoadOverQT
 
 """
 # 23.02.17
@@ -108,10 +111,15 @@ def fncShapeDaten (sLandKenn):
 
 def zipDownload(url,zipname):
     lok=EZUTempDir()
+    size,status = DownLoadOverQT ( toUnicode(url), toUnicode(lok + zipname))
+    return lok+zipname, size, status
+    """
     # 14.02.18: In Thüringen klappt der Download oft erst im 2. Versuch
     #           obwohl ein Fehler kommt, hat der Download bei Tests trotzdem funktioniert
-    #           --> nur Fehler werfen, wenn beim 2. Versuch die Datei nicht da
+    #           --> nur Fehler wer´fen, wenn beim 2. Versuch die Datei nicht da
     try:
+        ' 13.08.18 aus aufrufender Prozedur nach hier
+        url = url.encode("utf8") # die url kann Umlaute enthalten, welche codiert werden müssen
         urlretrieve ( url,lok+zipname)
         return lok+zipname
     except:
@@ -129,7 +137,7 @@ def zipDownload(url,zipname):
             if fncDebugMode():
                 addHinweis ("Download beim Gemarkung - Datei trotzdem vorhanden: " + zipname)
             return lok+zipname
-            
+    """        
 def DownloadLand2Array (ansiDatName):
     #qDatName=ansiDatName.decode("cp1252").encode('utf-8')
     qDatName=bytearray(ansiDatName, 'utf-8').decode("cp1252")
@@ -137,25 +145,26 @@ def DownloadLand2Array (ansiDatName):
     datDatName = unzipdir + qDatName
     zipDatName = unzipdir + qDatName + ".zip"
     url="http://www.makobo.de/data/" + qDatName + ".zip"
-    try:
+    #try:
+    if (True):
         if not os.path.exists(unzipdir):
             os.makedirs(unzipdir) 
         if not ClearDir(unzipdir):
             addFehler (unzipdir + ': ' + "konnte nicht geleert werden")
             return False
-        if os.getenv('COMPUTERNAME') == 'PK811':
+        if os.getenv('COMPUTERNAME') == 'xxxx':
             shutil.copyfile('D:/Flurst4SNTH.zip/'+qDatName + ".zip",zipDatName)
         else:
-            urlretrieve ( url,zipDatName)
+            size, status = DownLoadOverQT ( url,zipDatName)
         
         if not os.path.isfile(zipDatName):
-            addFehler (zipDatName + ': download ist fehlgeschlagen') 
+            addFehler (zipDatName + ': download ist fehlgeschlagen (Status:' + status + ')') 
             return False
         zip_ref = zipfile.ZipFile(zipDatName, 'r')
         zip_ref.extractall(unzipdir)
         zip_ref.close()
         if not os.path.isfile(datDatName):
-            addFehler (datDatName + ': UnZip ist fehlgeschlagen')
+            addFehler (datDatName + ': UnZip ist fehlgeschlagen (Status:' + status + ')')
             return False
             
         # in Array übertragen
@@ -170,7 +179,7 @@ def DownloadLand2Array (ansiDatName):
         fDatName.close()
         return arr
 
-    except:
+    #except:
         errbox ('Download vom Makobo-Server fehlgeschlagen!\nBesteht eine Internetverbindung?')
         return False
 
@@ -272,7 +281,7 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
         if Layer[0:2]=='*_': Layer=Layer[2:]
         korrSHPDatNam= unzipDir + Layer + '.shp'
         if sDat[ixF2L]:
-            opt = '-dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, ST_ExteriorRing(geometry) from \\\"' + Layer + '\\\""'
+            opt = '-dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, ST_ExteriorRing(geometry)  from \\\"' + Layer + '\\\""'
         else:
             opt = '-dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, geometry from \\\"' + Layer + '\\\""'
         if myqtVersion == 4:
@@ -284,7 +293,7 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
             addFehler('gdalogr:convertformat -> '+opt)
         
         if len(sDat) > 6:
-            # es ist eine Beschriftung zu generieren
+            # es ist eine Beschriftung zu generieren                                                                                    Tabellennamen mit Sonderzeichen:\\\"
             opt = '-lco SEPARATOR=TAB -lco GEOMETRY=AS_XYZ -dialect sqlite -sql "SELECT ST_PointOnSurface(geometry), ' + sDat[ixLabel] + ' from \\\"' + Layer + '\\\""'
             if myqtVersion == 4:
                 pAntw=processing.runalg('gdalogr:convertformat', korrSHPDatNam , 12, opt , korrDXFDatNam  + '_' + str(i) +'.csv')
@@ -401,7 +410,8 @@ def GemWorker(uiParent,qgisRootName, listZIPDatNam, expPfad, bSHPSave, bDXFSave,
         if bMitFlur: AktFlur  = datZeile[idxFlur]
         
         url = datZeile[idxDownloadURL]
-        url = url.encode("utf8") # die url kann Umlaute enthalten, welche codiert werden müssen    
+        # bei Download über QT darf das nicht codiert werden
+        #url = url.encode("utf8") # die url kann Umlaute enthalten, welche codiert werden müssen    
         zip = datZeile[idxLokName]+'.zip'
         
         if not uiParent.isRunning():
@@ -426,10 +436,10 @@ def GemWorker(uiParent,qgisRootName, listZIPDatNam, expPfad, bSHPSave, bDXFSave,
         uiParent.SetEinzelAktionAktSchritt(1)
         uiParent.SetEinzelAktionText(tr("Download ZIP-Archiv vom Landesserver"))
         
-        if os.getenv('COMPUTERNAME') == 'PK811':
+        if os.getenv('COMPUTERNAME') == 'xxxx':
             lokzip="d:/Flurst4SNTH.zip/" + sLandKenn + '/' + zip
         else:
-            lokzip=zipDownload(url, zip)
+            lokzip, size, status=zipDownload(url, zip)
         
         if lokzip is None:
             continue
@@ -523,7 +533,6 @@ def mergeDXFFlur(uiParent, dxfList, bLoeschen):
 
     for block in mergList:
         if len(block) ==2:
-            print ("move:",block[1],block[0])
             shutil.move(block[1],block[0])
         else:
             arr=[]
@@ -707,9 +716,6 @@ def fncSplitOgrDXF(quellDat, entDat, EntHandleStart = -1, bFirstDXF=False, headD
 
     return HndAktEnt
 
-def mergeDXFFiles4Folder (globFolder,zDat):
-    print (glob(globFolder))
-    
     
 if __name__ == "__main__":
     dummy=0

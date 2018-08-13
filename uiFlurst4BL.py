@@ -322,7 +322,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
             s="Es werden " + str(len(Liste)) + " Einzelshapes bearbeitet.\nDie wird einige Zeit in Anspruch nehmen."
             s=s+'\n\n' + "Soll der Import/die Konvertierung trotzdem gestartet werden?"
             antw=QMessageBox.question(None, u"Rückfrage", s, QMessageBox.Yes, QMessageBox.No)
-            if antw != QtGui.QMessageBox.Yes:
+            if antw != QMessageBox.Yes:
                 return False
 
         
