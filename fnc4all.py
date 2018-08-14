@@ -275,7 +275,7 @@ def debuglog(text,DebugMode=False):
 def hinweislog(text,p=None):
         su= toUnicode(text)   
         try:
-            QgsMessageLog.logMessage( su, 'AXF2Shape:Comments' )
+            QgsMessageLog.logMessage( su, 'EZUSoft:Comments' )
         except:
             pass
     

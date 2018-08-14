@@ -343,7 +343,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
             
         self.OptSpeichern()
         iface.mapCanvas().setRenderFlag( False )   # Kartenaktualisierung abschalten
-        Antw = GemWorker (self,  self.fncAktLandName(), Liste, ZielPfad, self.chkSHP.isChecked(), self.chkDXF.isChecked(),self.chkMergeFlur.isChecked())
+        Antw = GemWorker (self, self.glAktLandKenn, self.fncAktLandName(), Liste, ZielPfad, self.chkSHP.isChecked(), self.chkDXF.isChecked(),self.chkMergeFlur.isChecked())
         iface.mapCanvas().setRenderFlag( True )   # Kartenaktualisierung einschalten
         self.bGlAbbruch = False
         self.FormRunning(False) # nur sicherheitshalber, falls in GemWorker übersprungen/vergessen

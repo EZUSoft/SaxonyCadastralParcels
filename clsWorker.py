@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+ 14.08.18: - skipfailure für alle QGR-Aktionen
+           - Flächen zu Linien : ST_ExteriorRing --> ST_Boundary
  30.07.18:
     Tabellennamen (Dateinamen) für sqlite maskiert: from \\\"' + Layer + '\\\""'
 /***************************************************************************
@@ -281,9 +283,9 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
         if Layer[0:2]=='*_': Layer=Layer[2:]
         korrSHPDatNam= unzipDir + Layer + '.shp'
         if sDat[ixF2L]:
-            opt = '-dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, ST_ExteriorRing(geometry)  from \\\"' + Layer + '\\\""'
+            opt = '-skipfailure -dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, ST_Boundary(geometry)  from \\\"' + Layer + '\\\""'
         else:
-            opt = '-dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, geometry from \\\"' + Layer + '\\\""'
+            opt = '-skipfailure -dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, geometry from \\\"' + Layer + '\\\""'
         if myqtVersion == 4:
             pAntw=processing.runalg('gdalogr:convertformat', korrSHPDatNam , 10, opt , korrDXFDatNam  + '_' + str(i) +'.dxf')
         else:
@@ -294,7 +296,7 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
         
         if len(sDat) > 6:
             # es ist eine Beschriftung zu generieren                                                                                    Tabellennamen mit Sonderzeichen:\\\"
-            opt = '-lco SEPARATOR=TAB -lco GEOMETRY=AS_XYZ -dialect sqlite -sql "SELECT ST_PointOnSurface(geometry), ' + sDat[ixLabel] + ' from \\\"' + Layer + '\\\""'
+            opt = '-skipfailure -lco SEPARATOR=TAB -lco GEOMETRY=AS_XYZ -dialect sqlite -sql "SELECT ST_PointOnSurface(geometry), ' + sDat[ixLabel] + ' from \\\"' + Layer + '\\\""'
             if myqtVersion == 4:
                 pAntw=processing.runalg('gdalogr:convertformat', korrSHPDatNam , 12, opt , korrDXFDatNam  + '_' + str(i) +'.csv')
             else:
@@ -338,7 +340,7 @@ def delUnzipIfUcan():
             pass
     
     
-def GemWorker(uiParent,qgisRootName, listZIPDatNam, expPfad, bSHPSave, bDXFSave, bMergeFlur):    
+def GemWorker(uiParent, lKenn, qgisRootName, listZIPDatNam, expPfad, bSHPSave, bDXFSave, bMergeFlur):    
     # Processing erst hier Laden, um den Start von QGIS zu beschleunigen
     import processing
     from processing.core.Processing import Processing
@@ -379,7 +381,7 @@ def GemWorker(uiParent,qgisRootName, listZIPDatNam, expPfad, bSHPSave, bDXFSave,
     # 3. Abarbeitung der Dateien
     i=0
     uiParent.SetDatAktionGesSchritte(len(listZIPDatNam))
-    chkurl="http://www.makobo.de/links/GemList_SaxonyCadastralParcels.php?" + fncBrowserID() + "|" + str(len(listZIPDatNam)).strip()
+    chkurl="http://www.makobo.de/links/GemList_SaxonyCadastralParcels.php?" + fncBrowserID() + "|" + lKenn + ':' + str(len(listZIPDatNam)).strip()
     
     StepCount4Datei = 2
     if  bSHPSave:
@@ -387,7 +389,8 @@ def GemWorker(uiParent,qgisRootName, listZIPDatNam, expPfad, bSHPSave, bDXFSave,
     if  bDXFSave:
         StepCount4Datei = StepCount4Datei + 3
     try:
-        urllib.urlretrieve (chkurl,EZUTempDir()+'test.zip')
+        DownLoadOverQT(chkurl,EZUTempDir()+'test.zip')
+        #urllib.urlretrieve (chkurl,EZUTempDir()+'test.zip')
     except:
         pass
     dxfMerge=[]
