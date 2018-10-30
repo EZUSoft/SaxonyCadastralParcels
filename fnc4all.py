@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+  29.10.2018: fncUniDatRead23() und fncUniDatOpen23() definiert 
+  01.03.2018: tryDecode an Python3 angepasst
   13.02.2018: fncDebugMode musste hier raus, da in Projektdatei definiert
   26.01.2018: alle PlugIn's abgeglichen
 
@@ -25,7 +27,7 @@
 """
 # Einbau in QGIS per
 # >> sys.path.append('C:/Users/.../.qgis3/python/plugins/<plugin-name>')
-# >> sys.path.append('C:/Users/.../AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/SaxonyCadastralParcels')
+# >> sys.path.append('C:/Users/.../AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/GermanyCadastralParcels')
 # >> from fnc4all import *
 # Aktualisierung python 3.x per
 # >> import importlib
@@ -39,7 +41,8 @@ try:
     from PyQt5 import QtGui
     from PyQt5.QtCore import QSettings
     from PyQt5.QtWidgets import QApplication,QMessageBox
-
+    from configparser import ConfigParser
+    
     def myQGIS_VERSION_INT():
         return Qgis.QGIS_VERSION_INT
     myqtVersion = 5
@@ -48,6 +51,8 @@ except:
     from PyQt4 import QtGui
     from PyQt4.QtCore import QSettings
     from PyQt4.QtGui import QMessageBox,QApplication
+    from ConfigParser import ConfigParser
+    
     def myQGIS_VERSION_INT():
         return QGis.QGIS_VERSION_INT
     myqtVersion = 4
@@ -163,7 +168,14 @@ def resetHinweis() :
     global glHinweisListe
     glHinweisListe = [] 
 
+def fncPluginVersion():
+    config = ConfigParser()
+    config.read(os.path.join(os.path.dirname(__file__),'metadata.txt'))
 
+    #name        = config.get('general', 'name')
+    #description = config.get('general', 'description')
+    return config.get('general', 'version')
+    
 # unerwarteter LZF mit Sofortmeldung
 """ Aufruf per:
 except Exception as e:
@@ -335,11 +347,16 @@ def toUTF8(uText):
         return uText    
         
 def tryDecode(txt,sCharset):
+    if myqtVersion == 5: 
+        try:
+            return str(bytes(txt,"utf8").decode(sCharset) )
+        except:
+            return txt
     try:
         re=txt.decode( sCharset) 
         return re
     except:
-        return '#decodeerror#'    
+        return '#decodeerror4#'    
 
 def ClearDir(Verz):
     for dat in glob(Verz +'*.*'):
@@ -367,9 +384,45 @@ def qXDatAbsolute2Relativ(tmpDat, qlrDat, PathAbsolute):
         iDatNum.close()
         oDatNum.close()
         os.remove(tmpDat)
+
+def fncUniDatReadAll23(DatName,sEncode):
+    # universale Funktion um Dateiinhalt in Array zu schreiben
+    # - öffnet und schließt die Datei (besser als csvArray=open(qCsvDat, "r", encoding='utf-8').readlines())
+    # - erzwingt für Python 3 das Encoding
+    # - ignoriert für Python 2 das Encoding
+    if myqtVersion == 5:
+        tmp = open(DatName, "r", encoding=sEncode)
+    else:
+        tmp = open(DatName, "r")
+    tmpArray =tmp.readlines()
+    tmp.close()
+    return tmpArray
+
+def subUniDatWriteAll23(DatName, Art, zArray,sEncode):
+    # universale Funktion um Array in Datei zu schreiben
+    # - öffnet und schließt die Datei (besser als csvArray=open(qCsvDat, "r", encoding='utf-8').readlines())
+    # - erzwingt für Python 3 das Encoding
+    # - ignoriert für Python 2 das Encoding
+    if myqtVersion == 5:
+        tmp = open(DatName, Art, encoding=sEncode)
+    else:
+        tmp = open(DatName, Art)
+    tmp.writelines(zArray)
+    tmp.close()
+    
+def fncUniDatOpen23 (DatName, Art, sEncode):
+    if myqtVersion == 5:
+        tmp = open(DatName, Art, encoding=sEncode)
+    else:
+        tmp = open(DatName, Art)
+    return tmp
         
 if __name__ == "__main__": 
-    fncMakeDatName("abc")
+    Haupt,Neben,Revision=fncPluginVersion().split(".")
+    print( int(Haupt) >= 1 and int(Neben) >= 1)
+    
+    #if len(getFehler()) > 0:
+    #    print("\n\n".join(getFehler()))  
     #tmpDat="X:/Downloaddienst/FnP/FnP-2.Entwurf.qlr"
     #qlrDat="D:/tar/2.qlr"
     #s="D:/Downloaddienst/FnP/"

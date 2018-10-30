@@ -14,8 +14,9 @@ description=Download, display and conversion of the Inspire parcels for the Germ
 
 author=Mike Blechschmidt EZUSoft
 email=qgis@makobo.de
-version=0.3.0
-changelog= 14.08.18 V0.3.1: Randlinien werden jetzt auch bei Exklaven sauber erzeugt
+version=0.3.2
+changelog= 29.10.18 V0.3.2: Anpassungen an QGIS 3.4.0
+        14.08.18 V0.3.1: Randlinien werden jetzt auch bei Exklaven sauber erzeugt
         13.08.18 V0.3.0: Neue Downloadfunktion über QT mit QGIS-Proxy, HTTPS, Redirekt
         30.07.18 V0.2.2: Problem bei neuer ALKIS-Struktur des GeoSN beseitigt
         06.06.18 V0.2.1: Anpassung an neue ALKIS-Struktur des GeoSN

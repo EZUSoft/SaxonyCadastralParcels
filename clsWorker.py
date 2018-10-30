@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 """
+ 29.10.18: In QGIS 3.4.0 ist locale.getpreferredencoding() auf UTF8 gesetzt, dadurch scheitert das 
+           "optionslose" (open(quellDat, "r",None) Einlesen von ansi DXF-Dateien
+           es wird davon ausgegengen, das (hier) OGR grundsätzlich CP1252 erzeugt
+           außerdem kann CP1252 (scheinbar) erstmal alles lesen (ansi, uft8,dos)
+           
+           sicherheitshalber Daten grundsätzlich sauber öffnen und schließen
+           - Eleminierung von csvArray=open(qCsvDat, "r", encoding='utf-8').readlines()
+           --> fncUniDatReadAll23
  14.08.18: - skipfailure für alle QGR-Aktionen
            - Flächen zu Linien : ST_ExteriorRing --> ST_Boundary
  30.07.18:
@@ -59,6 +67,8 @@ try:
 except:
     from .fnc4all import *
     from .modDownload import DownLoadOverQT
+
+    
 
 """
 # 23.02.17
@@ -147,8 +157,7 @@ def DownloadLand2Array (ansiDatName):
     datDatName = unzipdir + qDatName
     zipDatName = unzipdir + qDatName + ".zip"
     url="http://www.makobo.de/data/" + qDatName + ".zip"
-    #try:
-    if (True):
+    try:
         if not os.path.exists(unzipdir):
             os.makedirs(unzipdir) 
         if not ClearDir(unzipdir):
@@ -170,7 +179,7 @@ def DownloadLand2Array (ansiDatName):
             return False
             
         # in Array übertragen
-        fDatName  = open(datDatName, "r")
+        fDatName  = fncUniDatOpen23(datDatName, "r",'utf-8') # 29.10.18 encodining bei der Datei eigentlich egal, trotzdem gesetzt
         arr=[]
         for zeile in fDatName:
             zeile=zeile.rstrip() # Zeilenende abschneiden
@@ -181,7 +190,9 @@ def DownloadLand2Array (ansiDatName):
         fDatName.close()
         return arr
 
-    #except:
+    except:
+        if fncDebugMode():
+            raise
         errbox ('Download vom Makobo-Server fehlgeschlagen!\nBesteht eine Internetverbindung?')
         return False
 
@@ -219,7 +230,8 @@ def unzipShape4BL(shpList, unzipdir, zipdat, ShapePfad, ShapeName):
                 shutil.move(FAktDat,NeuDat)
             Anz+=1
         if Anz == 0:
-            addHinweis (ShpKern + ".*  in '" + zipdat + "' nicht gefunden")
+            if (ShpKern != 'INSPIRE_cpZoningS' and ShpKern != 'INSPIRE_cpParcelS'): # das ist der alte GeoSN Name
+                addHinweis (ShpKern + ".*  in '" + zipdat + "' nicht gefunden")
         else:
             korrList.append(shp)
     return korrList
@@ -291,6 +303,7 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
         else:
             pList={'INPUT':korrSHPDatNam,'OPTIONS':opt,'OUTPUT': korrDXFDatNam  + '_' + str(i) +'.dxf'}
             pAntw=processing.run('gdal:convertformat',pList)
+        
         if pAntw is None:
             addFehler('gdalogr:convertformat -> '+opt)
         
@@ -381,7 +394,7 @@ def GemWorker(uiParent, lKenn, qgisRootName, listZIPDatNam, expPfad, bSHPSave, b
     # 3. Abarbeitung der Dateien
     i=0
     uiParent.SetDatAktionGesSchritte(len(listZIPDatNam))
-    chkurl="http://www.makobo.de/links/GemList_SaxonyCadastralParcels.php?" + fncBrowserID() + "|" + lKenn + ':' + str(len(listZIPDatNam)).strip()
+    chkurl="http://www.makobo.de/links/GemList_SaxonyCadastralParcels.php?" + fncBrowserID() + "|" + fncPluginVersion() + ":"  
     
     StepCount4Datei = 2
     if  bSHPSave:
@@ -389,8 +402,8 @@ def GemWorker(uiParent, lKenn, qgisRootName, listZIPDatNam, expPfad, bSHPSave, b
     if  bDXFSave:
         StepCount4Datei = StepCount4Datei + 3
     try:
-        DownLoadOverQT(chkurl,EZUTempDir()+'test.zip')
-        #urllib.urlretrieve (chkurl,EZUTempDir()+'test.zip')
+        DownLoadOverQT(chkurl + str(myQGIS_VERSION_INT()) + ":" + lKenn + ':' + str(len(listZIPDatNam)).strip(),EZUTempDir()+'test.zip')
+        
     except:
         pass
     dxfMerge=[]
@@ -546,8 +559,8 @@ def mergeDXFFlur(uiParent, dxfList, bLoeschen):
 
             
 def changeDXFAttribute(qDxfDat,zDxfDat,sDat):
-    fqDxfDat  = open(qDxfDat, "r")
-    fzDxfDat  = open(zDxfDat, "w")
+    fqDxfDat  = fncUniDatOpen23(qDxfDat, "r",'cp1252') # 29.10.18 DXF grundsätzlich ansi
+    fzDxfDat  = fncUniDatOpen23(zDxfDat, "w",'cp1252') # 29.10.18 DXF grundsätzlich ansi
 
     #NeueHatchFarbe
     dxfArray=fqDxfDat.readlines()
@@ -571,14 +584,11 @@ def handleLong2Hex(hLong):
 def concatDXFBeschriftung(qDxfDat,qCsvDat,zDxfDat,sDat):
     if os.path.isfile(zDxfDat):
         os.remove(zDxfDat)
-    if myqtVersion == 5:
-        fzDxfDat  = open(zDxfDat, "w",encoding='cp1252')
-        csvArray=open(qCsvDat, "r", encoding='utf-8').readlines() # Utf8-Datei !!!!
-        dxfArray=open(qDxfDat, "r", encoding='cp1252').readlines() # Ansi Datei 
-    else:
-        fzDxfDat  = open(zDxfDat, "w")
-        csvArray=open(qCsvDat, "r").readlines() # Utf8-Datei !!!!
-        dxfArray=open(qDxfDat, "r").readlines() # Ansi Datei 
+        
+    fzDxfDat = fncUniDatOpen23(zDxfDat, "w",'cp1252')     
+    csvArray = fncUniDatReadAll23(qCsvDat,'utf-8')  # Utf8-Datei 
+    dxfArray = fncUniDatReadAll23(qDxfDat,'cp1252') # Ansi Datei 
+
 
     bStartFlENT = False
     h=0;z=0
@@ -636,15 +646,14 @@ def mergeDXFFiles(uiParent, Pfad, dxfFiles,zDatNam, bLoeschen):
     # Schreiben GesamtDXF
     # HANDSEED in Header schreiben
     uiParent.SetEinzelAktionAktSchritt(i)
-    dxfArray=open(Pfad + "h.txt", "r").readlines()
+    dxfArray=fncUniDatReadAll23(Pfad + "h.txt",'cp1252') # 29.10.18 DXF grundsätzlich ansi
     for aIdx in range(0,len(dxfArray)):
         if dxfArray[aIdx].rstrip() == "$HANDSEED" and dxfArray[aIdx - 1].strip() == "9" and dxfArray[aIdx + 1].strip() == "5":
             dxfArray[aIdx + 2] = handleLong2Hex(handles) + '\n'
 
-    open(zDatNam, "w").writelines(dxfArray)
-    open(zDatNam, "a").writelines(open(Pfad + "e.txt", "r").readlines())
-    open(zDatNam, "a").writelines(open(Pfad + "f.txt", "r").readlines())
- 
+    subUniDatWriteAll23(zDatNam, "w", dxfArray,'cp1252')
+    subUniDatWriteAll23(zDatNam, "a", fncUniDatReadAll23 ( Pfad + "e.txt",'cp1252'),'cp1252')
+    subUniDatWriteAll23(zDatNam, "a", fncUniDatReadAll23 ( Pfad + "f.txt",'cp1252'),'cp1252')
     
     if bLoeschen: 
         for dxfDat in dxfFiles:
@@ -663,8 +672,9 @@ def fncSplitOgrDXF(quellDat, entDat, EntHandleStart = -1, bFirstDXF=False, headD
 
     varHandle=0 
     HndAktEnt = EntHandleStart
-    dxfArray=open(quellDat, "r").readlines()
-    
+
+    dxfArray=fncUniDatReadAll23(quellDat,'cp1252')
+
     if bFirstDXF:
         if os.path.isfile(entDat): os.remove (entDat)
     if not footDat is None:
@@ -688,7 +698,7 @@ def fncSplitOgrDXF(quellDat, entDat, EntHandleStart = -1, bFirstDXF=False, headD
         if dxfArray[aIdx].rstrip() == "ENTITIES" and dxfArray[aIdx - 1].strip() == "2" and dxfArray[aIdx + 1].strip() == "0":
             idxEHeader=aIdx-1
             if not headDat is None:
-                open(headDat, "a").writelines(dxfArray[0:idxEHeader])
+                subUniDatWriteAll23(headDat, "a",dxfArray[0:idxEHeader],'cp1252')
             break
     
     # -----------------------------------
@@ -706,8 +716,8 @@ def fncSplitOgrDXF(quellDat, entDat, EntHandleStart = -1, bFirstDXF=False, headD
         if dxfArray[aIdx].rstrip() == "ENDSEC" and dxfArray[aIdx - 1].strip() == "0" and dxfArray[aIdx + 1].strip() == "0":
             idxEEntities=aIdx-1
             if bFirstDXF:
-                open(entDat, "w").writelines('  2\nENTITIES\n')
-            open(entDat, "a").writelines(dxfArray[idxEHeader+2:idxEEntities])
+                subUniDatWriteAll23(entDat, "w",'  2\nENTITIES\n','cp1252')
+            subUniDatWriteAll23(entDat, "a",dxfArray[idxEHeader+2:idxEEntities],'cp1252')
             break            
     
     # -----------------------------------
@@ -715,75 +725,10 @@ def fncSplitOgrDXF(quellDat, entDat, EntHandleStart = -1, bFirstDXF=False, headD
     # -----------------------------------
     if not footDat is None:
         #ENDSEC kommt der Einfachkeit halber mit in den Footer
-        open(footDat, "w").writelines(dxfArray[idxEEntities: len(dxfArray) + 1])
+        subUniDatWriteAll23(footDat, "w",dxfArray[idxEEntities: len(dxfArray) + 1],'cp1252')
 
     return HndAktEnt
 
     
 if __name__ == "__main__":
-    dummy=0
-    arr=[u'D:/tar/Neuer Ordner/G\xf6dern (1132)_1.dxf', u'D:/tar/Neuer Ordner/G\xf6dern (1132)_2.dxf']
-    z=u'D:/tar/Neuer Ordner/G\xf6dern (1132).dxf'
-    #mergeDXFFiles(EZUTempDir(), arr, z, True)
-    #mergeDXFFiles ("d:/tar/",glob("d:/tar/Neuer Ordner (2)/*.dxf"), 'd:/tar/merge' + str(myqtVersion) + '.dxf', False)
-    #tAnsi=open("d:/ansi.txt", "r").readlines()[0]
-    #tUtf8=open("d:/utf8.txt", "r").readlines()[0]
-    #utf2ansi=(tUtf8.decode("utf-8").encode('cp1252'))
-    #print(type(str(u"thoe")),type(utf2ansi),type(tUtf8))
-    
-    
-    #dxf4Beschriftung ("x","y",utf2ansi,"handle",u'2.58759',layer='txtlayer')
-    # ("test%stest%s") % ("abc",utf2ansi)
-    #'741420.337901089', '5644302.7145', 'Flur: G\xc3\xb6\xc3\x9fnitz', u'45', 50, 'Gemarkungsname')
-    """
-    sDat=['*_flurstueck','(Flst)',u'Flurstück','Flurstuecksgrenze', None, True, 'flurstnr as Beschr',3,'Flurstuecksnummer']
-    qDxfDat="d:/tar/02.dxf";qCsvDat="d:/tar/02.csv";zDxfDat='d:/tar/gen' + str(myqtVersion) + '.dxf'
-    concatDXFBeschriftung(qDxfDat,qCsvDat,zDxfDat,sDat)
-    """
-    """
-    sDat=['*_gebaeudeBauwerk','(Geb)',u'Gebäude','Gebaeude', '12497369' , False]
-    qDxfDat="d:/tar/geb.dxf";zDxfDat='d:/tar/gen.dxf'
-    #fncSplitOgrDXF     (quellDat,             entDat,    EntHandleStart,     bFirstDXF=False, headDat = None, footDat = None)
-
-    print fncSplitOgrDXF("d:/tar/1.dxf", "d:/tar/e.txt", -1, True,        "d:/tar/h.txt", "d:/tar/f.txt")
-    open("d:/tar/mytest.dxf", "w").writelines(open("d:/tar/h.txt", "r").readlines())
-    open("d:/tar/mytest.dxf", "a").writelines(open("d:/tar/e.txt", "r").readlines())
-    open("d:/tar/mytest.dxf", "a").writelines(open("d:/tar/f.txt", "r").readlines())
-    #List.append( fncSplitOgrDXF("d:/tar/3.dxf", "d:/tar/h.txt","d:/tar/e.txt", "d:/tar/f.txt", False,  0))
-    #print List
-    if len(getFehler()) > 0:
-        print("\n\n".join(getFehler()))
-        resetFehler()
-    if len(getHinweis()) > 0:
-        print("\n\n".join(getHinweis()))
-        resetHinweis() 
-
-    arr=[]
-    arr.append(u"d:/tar/Romschütz (1136)_1.dxf")
-    arr.append(u"d:/tar/Romschütz (1136)_2.dxf")
-    arr.append(u"d:/tar/Romschütz (1136)_3.dxf")
-    mergeDXFFiles ("d:/tar/",arr, 'd:/tar/merge' + str(myqtVersion) + '.dxf', False)
-
-
-    arr=DownloadLand2Array ("expSN.sDat")
-    if len(getFehler()) > 0:
-        print("\n\n".join(getFehler()))
-        resetFehler()
-    else:
-        f=open("d:/tar/mytest.csv", "w")
-        for zeile in arr:
-            f.write (zeile+"\n")
-    """    
-        
-
-    """
-    GemDxfDat="d:/tar/shp/8d2bf7e9-27bb-4a0c-8708-b3329b3c1077_1.dxf"
-    FlDxfDat="d:/tar/shp/8d2bf7e9-27bb-4a0c-8708-b3329b3c1077_2.dxf"
-    FlCsvDat="d:/tar/shp/8d2bf7e9-27bb-4a0c-8708-b3329b3c1077_3.csv"
-    concatDXF(GemDxfDat,FlDxfDat,FlCsvDat)
-    #KorrPrjDat ("d:/tar/x.dxf(GC)L.prj")
-    zipdat="d:/tar/Gemarkung_Erlabrunn (7406).zip"
-    ShapePfad="d:/tar/37/"
-    ShapeName="Gemarkung_Erlabrunn (7406)"
-    """
-    #print unzipShape4BL(zipdat, ShapePfad, ShapeName)
+    pass

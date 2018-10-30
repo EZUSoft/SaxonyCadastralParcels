@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """
+  29.10.2018: v rechnerabhängig
   09.01.2018: alle PlugIn's abgeglichen
 
 /***************************************************************************
@@ -30,13 +31,16 @@ except:
 
 
 def fncProgKennung():
-    return "CAIGOS-Konnektor" + str(myqtVersion)
+    return "CastralParcels" + str(myqtVersion)
 
 def fncProgVersion():
-    return "V 0.3"
+    return "V " + fncPluginVersion()
     
 def fncDebugMode(): 
-    return False
+    if (os.path.exists(os.path.dirname(__file__) + '/00-debug.txt')): # Kennung für Testrechner
+        return True
+    else:
+        return False
 
 def fncBrowserID():
     s = QSettings( "EZUSoft", fncProgKennung() )
