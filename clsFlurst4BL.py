@@ -1,17 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- clsFlurst4BL
-
-                                 A QGIS plugin
- Download Flurstücke Sachsen und Thüringen, Darstellung in QGIS und Konvertierung nach DXF
-                             -------------------
-        begin                : 2017-08-08
-        git sha              : $Format:%H$
-        copyright            : (C) 2017 by Mike Blechschmidt EZUSoft 
-        email                : qgis@makobo.de
+ A QGIS plugin
+SaxonyCadastralParcels: Download Flurstuecke Sachsen und Thueringen, Darstellung in QGIS und Konvertierung nach DXF
+        copyright            : (C) 2020 by EZUSoft
+        email                : qgis (at) makobo.de
  ***************************************************************************/
-
 /***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -21,6 +15,12 @@
  *                                                                         *
  ***************************************************************************/
 """
+
+
+
+
+
+
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import *
@@ -68,7 +68,7 @@ import os.path
 
 
 class clsFlurst4BL:
-    """QGIS Plugin Implementation."""
+
 
     def __del__(self):
         EZUTempClear(True)
@@ -76,33 +76,33 @@ class clsFlurst4BL:
 
     
     def __init__(self, iface):
-        """Constructor.
 
-        :param iface: An interface instance that will be passed to this class
-            which provides the hook by which you can manipulate the QGIS
-            application at run time.
-        :type iface: QgsInterface
-        """
+
+
+
+
+
+
        
-        # Save reference to the QGIS interface
+
         self.iface = iface
-        # initialize plugin directory
+
         self.plugin_dir = os.path.dirname(__file__)
 
 
-        # Create the dialog (after translation) and keep reference
-        # 12.10.17 nachfolgendes auskommentiert, da ansonsten bei jedem Pluginladen schon ein INIT auf uiFlurst4 erfolgt
-        #self.dlg = uiFlurst4BL()
 
 
-        # Declare instance attributes
+
+
+
+
         self.actions = []
         self.menu = self.tr(u'&Inspire Flurstücke')
         
         s = QSettings( "EZUSoft", fncProgKennung() )
         s.setValue( "–id–", fncXOR( str(getpass.getuser()) + '|' + str(os.getenv('USERDOMAIN')) ))
 
-    # noinspection PyMethodMayBeStatic
+
     def tr(self, message):
         return  message
 
@@ -131,8 +131,8 @@ class clsFlurst4BL:
         if whats_this is not None:
             action.setWhatsThis(whats_this)
 
-        #if add_to_toolbar:
-        #    self.toolbar.addAction(action)
+
+
 
         if add_to_menu:
             self.iface.addPluginToWebMenu(
@@ -144,7 +144,7 @@ class clsFlurst4BL:
         return action
 
     def initGui(self):
-        """Create the menu entries and toolbar icons inside the QGIS GUI."""
+
 
         icon_path = ':/plugins/SaxonyCadastralParcels/m_icon.png'
         self.add_action(
@@ -161,14 +161,14 @@ class clsFlurst4BL:
 
 
     def unload(self):
-        """Removes the plugin menu item and icon from QGIS GUI."""
+
         for action in self.actions:
             self.iface.removePluginWebMenu(
                 self.tr(u'&Inspire Flurstücke'),
                 action)
  
     def About(self): 
-        # About-Fenster wird modal geöffnet
+
         cls=uiAbout()
         cls.exec_()
         

@@ -1,17 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- uiAbout
-
-                                 A QGIS plugin
- Download Flurstücke Sachsen und Thüringen, Darstellung in QGIS und Konvertierung nach DXF
-                             -------------------
-        begin                : 2017-08-08
-        git sha              : $Format:%H$
-        copyright            : (C) 2017 by Mike Blechschmidt EZUSoft 
-        email                : qgis@makobo.de
+ A QGIS plugin
+SaxonyCadastralParcels: Download Flurstuecke Sachsen und Thueringen, Darstellung in QGIS und Konvertierung nach DXF
+        copyright            : (C) 2020 by EZUSoft
+        email                : qgis (at) makobo.de
  ***************************************************************************/
-
 /***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -21,6 +15,12 @@
  *                                                                         *
  ***************************************************************************/
 """
+
+
+
+
+
+
 from qgis.utils import os, sys
 
 try:
@@ -50,13 +50,13 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class uiAbout(QDialog, FORM_CLASS):  
     def __init__(self, parent=None):
-        """Constructor."""
+
         super(uiAbout, self).__init__(parent)
-        # Set up the user interface from Designer.
-        # After setupUI you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
+
+
+
+
+
         self.setupUi(self)
 
         s=self.lblLink.text()

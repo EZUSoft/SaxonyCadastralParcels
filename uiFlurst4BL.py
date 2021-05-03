@@ -1,21 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- uiFlurst4BL
-    V0.1.2
-    - Anpassung 31.08.17: "." durch "_" bei Gemarkungen im Downloadname ersetzen
-    V0.1.1
-    - Anpassung 22.08.17: keine führende 0 bei Gemarkungen im Downloadname
-
-                                 A QGIS plugin
- Download Flurstücke Sachsen und Thüringen, Darstellung in QGIS und Konvertierung nach DXF
-                             -------------------
-        begin                : 2017-08-08
-        git sha              : $Format:%H$
-        copyright            : (C) 2017 by Mike Blechschmidt EZUSoft 
-        email                : qgis@makobo.de
+ A QGIS plugin
+SaxonyCadastralParcels: Download Flurstuecke Sachsen und Thueringen, Darstellung in QGIS und Konvertierung nach DXF
+        copyright            : (C) 2020 by EZUSoft
+        email                : qgis (at) makobo.de
  ***************************************************************************/
-
 /***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -25,6 +15,16 @@
  *                                                                         *
  ***************************************************************************/
 """
+
+
+
+
+
+
+
+
+
+
 
 
 from qgis.core import *
@@ -53,7 +53,7 @@ except:
     from .fnc4SaxonyCadastralParcels import *
     from .clsWorker import GemWorker,DownloadLand2Array
 
-# Programm funktioniert auch ohne installierte gdal-Bibliothek, die Bibo wird nur zur Anzeige der Version genommen
+
 try:
    import gdal
 except:
@@ -69,17 +69,17 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
     bGlMitFlur = False
 
     def __init__(self, parent=None):
-        """Constructor."""
+
         super(uiFlurst4BL, self).__init__(parent)
         
-        # initialize plugin directory
+
         self.plugin_dir = os.path.dirname(__file__)
         
-        # Set up the user interface from Designer.
-        # After setupUI you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
+
+
+
+
+
         self.setupUi(self)
         self.setWindowTitle (fncCGFensterTitel())
         self.browseZielPfad.clicked.connect(self.browseZielPfad_clicked) 
@@ -94,11 +94,11 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         self.SetzeLandName()
         self.FormRunning(False)
 
-    # noinspection PyMethodMayBeStatic
+
     def closeEvent(self, event):
         if not self.btnStart.isVisible():
             self.btnAbbruch_clicked()
-            # event.ignore() ist zu riskannt, da bei Abstürzen das Fenster nicht mehr schließbar
+
 
     def isRunning(self):
         return not self.bGlAbbruch
@@ -116,7 +116,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
     def signalLandWechsel(self):
         if self.cbLand.count() == 1 :
             self.btnStart.setEnabled (False)
-            return # automatischer Erstaufruf        
+            return 
 
         if self.cbLand.currentIndex() == 0: self.glAktLandKenn = "SN"; self.bGlMitFlur=False
         if self.cbLand.currentIndex() == 1: self.glAktLandKenn = "TH"; self.bGlMitFlur=True
@@ -136,12 +136,12 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
                 self.chkMergeFlur.hide()
         
         if self.cbLand.count() == 3 :
-            self.cbLand.removeItem(2) # "Kommentar"-Zeile löschen
+            self.cbLand.removeItem(2) 
 
 
 
     def LadeGemarkungen(self):
-        # 08.01.2018: Download der Liste vom makobo-Server "http://www.makobo.de/data/"
+
         bMitFlur=self.bGlMitFlur
         AktLandName=self.fncAktLandName()
 
@@ -153,24 +153,24 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         self.SetDatAktionGesSchritte(3)
 
         idxDownloadURL = 0;idxWeiter = 1;idxLokName = 2;idxLand = 3;idxLK = 4;idxGemeinde = 5;idxGemarkung = 6;idxFlur = 7
-        #http://geodownload.sachsen.de/inspire/cp_atom/gm_shape_25833/Gemarkung_Dittersdorf%20(2113).zip	-1	Dittersdorf (2113)	Sachsen	Erzgebirgskreis	Amtsberg	Dittersdorf (2113)
+
         
         self.SetDatAktionText("Download der Gemarkungsliste");self.SetDatAktionAktSchritt(1)
         arrGem=DownloadLand2Array("exp"+self.glAktLandKenn+".dat")
         if arrGem == False:
             return
         self.SetDatAktionText("Gemarkungsliste aufbauen");self.SetDatAktionAktSchritt(2)
-        # treeview leeren
+
         tvLand  = QTreeWidgetItem(self.objTVGem)
         tvLand.takeChild(0)
         self.objTVGem.takeTopLevelItem(0)
         tvLand.takeChild(0)
         self.objTVGem.takeTopLevelItem(0)      
         
-        # Treeview Neuaufbau
+
         self.objTVGem.addTopLevelItem(tvLand)
         tvLand.setText(0, AktLandName)
-        #tvLand.setFlags(tvLand.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)
+
         tvLand.setExpanded(True)
         
         AktKreis=None
@@ -179,13 +179,13 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         
         for gemDS in arrGem:
             Zeile=gemDS.split("\t")
-            # <DownloadAdresse> <IstUmleitung> <LokalerName>
-            #DownloadAdresse=Zeile[idxURL]
-            istUmleitung = Zeile[idxWeiter] # noch nicht programmiert
+
+
+            istUmleitung = Zeile[idxWeiter] 
             if Zeile[idxLK] != AktKreis:
                 tvKreis = QTreeWidgetItem(tvLand)
                 tvKreis.setText(0, Zeile[idxLK].strip())
-                #tvKreis.setFlags(tvKreis.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)
+
             AktKreis=Zeile[idxLK].strip()
             
             if Zeile[idxGemeinde].strip() != AktGemeinde:
@@ -195,7 +195,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
             AktGemeinde=Zeile[idxGemeinde].strip()       
             
             
-            # bMitFlur als Text übergeben
+
             if bMitFlur:
                 param = "True\t" + gemDS
             else:
@@ -209,26 +209,26 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
                 AktGemarkung=Zeile[idxGemarkung].strip() 
                 tvFlur = QTreeWidgetItem(tvGemarkung)
                 tvFlur.setFlags(tvFlur.flags() | Qt.ItemIsUserCheckable)
-                tvFlur.setText(0, Zeile[idxFlur].strip()) # +' (' + Zeile[3].strip() + ')')
+                tvFlur.setText(0, Zeile[idxFlur].strip()) 
                 tvFlur.setCheckState(0, Qt.Unchecked) 
                 tvFlur.setData(1,0,param)
             else:
                 tvGemark = QTreeWidgetItem(tvGemeinde)
                 tvGemark.setFlags(tvGemark.flags() | Qt.ItemIsUserCheckable)
-                tvGemark.setText(0, Zeile[idxGemarkung].strip()) # +' (' + Zeile[3].strip() + ')')
+                tvGemark.setText(0, Zeile[idxGemarkung].strip()) 
                 tvGemark.setCheckState(0, Qt.Unchecked)  
                 tvGemark.setData(1,0,param)
         return True
 
         
     def SetzeVoreinstellungen(self):
-	    # Voreinstellungen setzen
+	    
         s = QSettings( "EZUSoft", fncProgKennung() )
         
-        # letzte Anzeigegröße wiederherstellen
-        # 14.02.18: Vermutlich beim Zurück auf eine ältere Version kommt es zu einem Fehler:
-        #           unable to convert a QVariant back to a Python object
-        #           --> Bei Fehler Settings löschen
+
+
+
+
         try:
             SaveWidth  = int(s.value("SaveWidth", "0"))
             SaveHeight = int(s.value("SaveHeight", "0"))
@@ -307,10 +307,10 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         while it.value():
             item = it.value()
             if item.text(1): 
-                #url = "http://geodownload.sachsen.de/inspire/cp_atom/gm_shape_25833/Gemarkung_"
-                #zip = item.text(1)
-                #url = url + urllib.quote(zip.encode("utf8"))
-                #Liste.append (url + chr(9) + zip) 
+
+
+
+
                 Liste.append (item.text(1))
             it += 1
             
@@ -326,7 +326,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
                 return False
 
         
-        # 2. Test ob ZielPfad vorhanden
+
         if self.chkSHP.isChecked() or self.chkDXF.isChecked():
             ZielPfad=self.txtZielPfad.text()
         else:
@@ -342,11 +342,11 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
             return
             
         self.OptSpeichern()
-        iface.mapCanvas().setRenderFlag( False )   # Kartenaktualisierung abschalten
+        iface.mapCanvas().setRenderFlag( False )   
         Antw = GemWorker (self, self.glAktLandKenn, self.fncAktLandName(), Liste, ZielPfad, self.chkSHP.isChecked(), self.chkDXF.isChecked(),self.chkMergeFlur.isChecked())
-        iface.mapCanvas().setRenderFlag( True )   # Kartenaktualisierung einschalten
+        iface.mapCanvas().setRenderFlag( True )   
         self.bGlAbbruch = False
-        self.FormRunning(False) # nur sicherheitshalber, falls in GemWorker übersprungen/vergessen
+        self.FormRunning(False) 
         
     
         
@@ -358,7 +358,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         QApplication.processEvents()
         self.pgBar.setValue(akt)
         self.repaint()
-        #QMessageBox.information(None, ("aktuell gesetzt"), str(akt))
+
     def SetEinzelAktionGesSchritte(self,ges):
         if ges < 0 :
             self.pgBar.hide()
@@ -367,7 +367,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         QApplication.processEvents()
         self.pgBar.setMaximum(ges)
         self.repaint()
-        #QMessageBox.information(None, ("maximum gesetzt"), str(ges))
+
     
     def SetDatAktionText(self,txt):
         QApplication.processEvents()
@@ -377,7 +377,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         QApplication.processEvents()
         self.pgDatBar.setValue(akt)
         self.repaint()
-        #QMessageBox.information(None, ("aktuell gesetzt"), str(akt))
+
     def SetDatAktionGesSchritte(self,ges):
         if ges < 0 :
             self.pgDatBar.hide()
@@ -386,7 +386,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         QApplication.processEvents()
         self.pgDatBar.setMaximum(ges)
         self.repaint()
-        #QMessageBox.information(None, ("maximum gesetzt"), str(ges))
+
 
     def FormRunning(self,bRun):
         def Anz(ctl):
@@ -403,7 +403,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         Anz(self.chkSHP); Anz(self.chkDXF);Anz(self.chkMergeFlur)
         
         
-        # Sondereinstellung
+
         if not bRun:
             if self.bGlMitFlur: self.chkMergeFlur.show()
 
@@ -442,7 +442,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
             msgbox(u"\n\n".join(getHinweis()))  
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    #from uiFlurst4BL import uiFlurst4BL
+
 
     window = uiFlurst4BL()
     print (window.isRunning())

@@ -1,29 +1,11 @@
 # -*- coding: utf-8 -*-
 """
- 29.10.18: In QGIS 3.4.0 ist locale.getpreferredencoding() auf UTF8 gesetzt, dadurch scheitert das 
-           "optionslose" (open(quellDat, "r",None) Einlesen von ansi DXF-Dateien
-           es wird davon ausgegengen, das (hier) OGR grundsätzlich CP1252 erzeugt
-           außerdem kann CP1252 (scheinbar) erstmal alles lesen (ansi, uft8,dos)
-           
-           sicherheitshalber Daten grundsätzlich sauber öffnen und schließen
-           - Eleminierung von csvArray=open(qCsvDat, "r", encoding='utf-8').readlines()
-           --> fncUniDatReadAll23
- 14.08.18: - skipfailure für alle QGR-Aktionen
-           - Flächen zu Linien : ST_ExteriorRing --> ST_Boundary
- 30.07.18:
-    Tabellennamen (Dateinamen) für sqlite maskiert: from \\\"' + Layer + '\\\""'
 /***************************************************************************
- clsWorker
-
-                                 A QGIS plugin
- Download Flurstücke Sachsen und Thüringen, Darstellung in QGIS und Konvertierung nach DXF
-                             -------------------
-        begin                : 2017-08-08
-        git sha              : $Format:%H$
-        copyright            : (C) 2017 by Mike Blechschmidt EZUSoft 
-        email                : qgis@makobo.de
+ A QGIS plugin
+SaxonyCadastralParcels: Download Flurstuecke Sachsen und Thueringen, Darstellung in QGIS und Konvertierung nach DXF
+        copyright            : (C) 2020 by EZUSoft
+        email                : qgis (at) makobo.de
  ***************************************************************************/
-
 /***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -34,11 +16,33 @@
  ***************************************************************************/
 """
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 from random import randrange
 import sys
 import uuid
-# das einladen führt zu komischen Umlautfehlern im QGIS!!!!!
-#from qgis.utils import *
+
+
 from qgis.core import *
 from glob import glob
 import shutil 
@@ -70,12 +74,12 @@ except:
 
     
 
-"""
-# 23.02.17
-# Processing erst in den Funktionen selbst laden, um den Start von QGIS zu beschleunigen
-import processing
-from processing.core.Processing import Processing
-"""
+
+
+
+
+
+
 
 try:
     from fnc4SaxonyCadastralParcels import *
@@ -83,25 +87,25 @@ except:
     from .fnc4SaxonyCadastralParcels import *
 
 def tr( message):
-    """Get the translation for a string using Qt translation API.
 
-    We implement this ourselves since we do not inherit QObject.
 
-    :param message: String for translation.
-    :type message: str, QString
 
-    :returns: Translated version of message.
-    :rtype: QString
-    """
-    # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-    return message #QCoreApplication.translate('clsWorker', message)
+
+
+
+
+
+
+
+
+    return message 
 
 ixZipName=0;ixDatKuerz=1;ixQName=2;ixLName=3;ixDXFFarbe=4;ixF2L=5;ixLabel=6;ixLHoe=7;ixBName=8
 def fncShapeDaten (sLandKenn):
-    # Layer "Datenbank"
-    #    0          1          2               3               4            5                       6                       7               8
-    # zipname, dateikürzel, NameImQGISBaum, LayernameInDXF, DXFFarbe, "FlächeNachLinie", Optional: Beschriftung, Optional: Höhe, Optional: BeschLayer
-    if sLandKenn == "SN": # in Sachsen sind die Dateinamen fest (ab 01.06.18 Name mit Punkt INSPIRE_cpParcelS --> INSPIRE.cpParcelS)
+
+
+
+    if sLandKenn == "SN": 
         allshpList=[
             ['INSPIRE.cpParcelS','(Flst)',u'Flurstück','Flurstuecksgrenze', None, True, 'LABEL as Beschr',3,'Flurstuecksnummer']
             ,
@@ -111,47 +115,47 @@ def fncShapeDaten (sLandKenn):
             ,
             ['INSPIRE_cpZoningS','(Gem)','Gemarkung','Gemarkungsgrenze', None, True, 'LABEL as Beschr',50,'Gemarkungsname']
         ]
-    if sLandKenn == "TH": # in den Thüringer Dateinamen sind GemSchl und Flurnummer enthalten
+    if sLandKenn == "TH": 
         allshpList=[
             ['*_gebaeudeBauwerk','(Geb)',u'Gebäude','Gebaeude', '12497369' , False]
             ,  
             ['*_katasterBezirk', '(Gem)','Gemarkung','Gemarkungsgrenze', None, True, "art || ': ' || ueboname as Beschr",50,'Gemarkungsname']
             , 
             ['*_flurstueck','(Flst)',u'Flurstück','Flurstuecksgrenze', None, True, 'flurstnr as Beschr',3,'Flurstuecksnummer']
-        ] #,['*_nutzungFlurstueck','(Nutz)',u'Nutzung','Nutzung', True]] 
+        ] 
     return allshpList
 
 def zipDownload(url,zipname):
     lok=EZUTempDir()
     size,status = DownLoadOverQT ( toUnicode(url), toUnicode(lok + zipname))
     return lok+zipname, size, status
-    """
-    # 14.02.18: In Thüringen klappt der Download oft erst im 2. Versuch
-    #           obwohl ein Fehler kommt, hat der Download bei Tests trotzdem funktioniert
-    #           --> nur Fehler wer´fen, wenn beim 2. Versuch die Datei nicht da
-    try:
-        ' 13.08.18 aus aufrufender Prozedur nach hier
-        url = url.encode("utf8") # die url kann Umlaute enthalten, welche codiert werden müssen
-        urlretrieve ( url,lok+zipname)
-        return lok+zipname
-    except:
-        pass
-    try:
-        urlretrieve ( url,lok+zipname)
-        if fncDebugMode():
-            addHinweis ("Download Gemarkung im 2. Versuch: " + zipname)
-        return lok+zipname
-    except:  
-        if not os.path.isfile(lok+zipname):
-            addFehler ("Fehler download Gemarkung: " + zipname)
-            return None
-        else:
-            if fncDebugMode():
-                addHinweis ("Download beim Gemarkung - Datei trotzdem vorhanden: " + zipname)
-            return lok+zipname
-    """        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def DownloadLand2Array (ansiDatName):
-    #qDatName=ansiDatName.decode("cp1252").encode('utf-8')
+
     qDatName=bytearray(ansiDatName, 'utf-8').decode("cp1252")
     unzipdir = EZUTempDir() + "/unzip/"
     datDatName = unzipdir + qDatName
@@ -175,14 +179,14 @@ def DownloadLand2Array (ansiDatName):
         zip_ref.extractall(unzipdir)
         zip_ref.close()
         if not os.path.isfile(datDatName):
-            addFehler (datDatName + ': UnZip ist fehlgeschlagen (Status:' + status + ')')
+            errbox (datDatName + ': UnZip ist fehlgeschlagen (Status:' + str(status) + ')')
             return False
             
-        # in Array übertragen
-        fDatName  = fncUniDatOpen23(datDatName, "r",'utf-8') # 29.10.18 encodining bei der Datei eigentlich egal, trotzdem gesetzt
+
+        fDatName  = fncUniDatOpen23(datDatName, "r",'utf-8') 
         arr=[]
         for zeile in fDatName:
-            zeile=zeile.rstrip() # Zeilenende abschneiden
+            zeile=zeile.rstrip() 
             if sys.version_info<(3,0,0):
                 arr.append (''.join((chr(ord(c)^ord(k))) for c,k in zip(zeile.decode("hex"), cycle("makobo"))))
             else:
@@ -222,7 +226,7 @@ def unzipShape4BL(shpList, unzipdir, zipdat, ShapePfad, ShapeName):
             AktExt = os.path.splitext(os.path.basename(FAktDat))[1]
             NeuDat=ShapePfad + ShapeName + shp[1] + AktExt
             shutil.copyfile(FAktDat,NeuDat)
-            # Gem/Flur bei TH abscheiden
+
             if shp[0][0:2] == '*_':
                 NeuDat=os.path.split(FAktDat)[1]
                 NeuDat=NeuDat[NeuDat.find('_')+1:]
@@ -230,7 +234,7 @@ def unzipShape4BL(shpList, unzipdir, zipdat, ShapePfad, ShapeName):
                 shutil.move(FAktDat,NeuDat)
             Anz+=1
         if Anz == 0:
-            if (ShpKern != 'INSPIRE_cpZoningS' and ShpKern != 'INSPIRE_cpParcelS'): # das ist der alte GeoSN Name
+            if (ShpKern != 'INSPIRE_cpZoningS' and ShpKern != 'INSPIRE_cpParcelS'): 
                 addHinweis (ShpKern + ".*  in '" + zipdat + "' nicht gefunden")
         else:
             korrList.append(shp)
@@ -268,15 +272,15 @@ def dxf4Beschriftung (x,y,txt,handle,thoe='2.58759',layer='txtlayer'):
 "  7"+ '\n'
 "STANDARD"+ '\n'
 "  0" + '\n') % (str(handle),str(layer),str(x),str(y),str(thoe),str(txt))
-    #if myqtVersion == 4: 
-    #    return must.encode("cp1252")
-    #else:
-    #    return must
+
+
+
+
     return must
 
 
 def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
-    # Processing erst hier Laden, um den Start von QGIS zu beschleunigen
+
     import processing
     from processing.core.Processing import Processing
     uiParent.SetEinzelAktionText(tr("Generiere DXF Daten"))
@@ -284,9 +288,9 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
     
 
     korrDXFDatNam=(EZUTempDir() + str(uuid.uuid4()))    
-    # shpList Aufbau:
-    #     0         1             2                3             4                      5                 6                     7                   
-    # zipname, dateikürzel, NameImQGISBaum, LayernameInDXF, "FlächeNachLinie", Optional: Beschriftung, Optional: Höhe, Optional: BeschLayer
+
+
+
     i=0;fertig=[]
     for sDat in shpList:
         uiParent.SetEinzelAktionAktSchritt(i)
@@ -295,9 +299,9 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
         if Layer[0:2]=='*_': Layer=Layer[2:]
         korrSHPDatNam= unzipDir + Layer + '.shp'
         if sDat[ixF2L]:
-            opt = '-skipfailure -dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, ST_Boundary(geometry)  from \\\"' + Layer + '\\\""'
+            opt = '-skipfailure -dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, ST_Boundary(geometry)  from \"' + Layer + '\""'
         else:
-            opt = '-skipfailure -dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, geometry from \\\"' + Layer + '\\\""'
+            opt = '-skipfailure -dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, geometry from \"' + Layer + '\""'
         if myqtVersion == 4:
             pAntw=processing.runalg('gdalogr:convertformat', korrSHPDatNam , 10, opt , korrDXFDatNam  + '_' + str(i) +'.dxf')
         else:
@@ -308,24 +312,29 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
             addFehler('gdalogr:convertformat -> '+opt)
         
         if len(sDat) > 6:
-            # es ist eine Beschriftung zu generieren                                                                                    Tabellennamen mit Sonderzeichen:\\\"
-            opt = '-skipfailure -lco SEPARATOR=TAB -lco GEOMETRY=AS_XYZ -dialect sqlite -sql "SELECT ST_PointOnSurface(geometry), ' + sDat[ixLabel] + ' from \\\"' + Layer + '\\\""'
+
+            opt = '-skipfailure -lco SEPARATOR=TAB -lco GEOMETRY=AS_XYZ -dialect sqlite -sql "SELECT ST_PointOnSurface(geometry), ' + sDat[ixLabel] + ' from \"' + Layer + '\""'
             if myqtVersion == 4:
                 pAntw=processing.runalg('gdalogr:convertformat', korrSHPDatNam , 12, opt , korrDXFDatNam  + '_' + str(i) +'.csv')
             else:
                 pList={'INPUT':korrSHPDatNam,'OPTIONS':opt,'OUTPUT': korrDXFDatNam  + '_' + str(i) +'.csv'}
                 pAntw=processing.run('gdal:convertformat',pList)
+                print (pList)
+                print (pAntw)
+                return False
             if pAntw is None:
                 errbox ('Fehler')
                 addFehler(tr("process 'gdalogr:convertformat' could not start please restart QGIS"))   
+
             qDxfDat=korrDXFDatNam  + '_' + str(i) +'.dxf'
             qCsvDat=korrDXFDatNam  + '_' + str(i) +'.csv'
             zDxfDat=korrDXFDatNam  + '_(ges)' + str(i) +'.dxf'
+            msgbox (qCsvDat)
             concatDXFBeschriftung(qDxfDat,qCsvDat,zDxfDat,sDat)
             fertig.append(zDxfDat)
         else:
             if not sDat[ixDXFFarbe] is None:
-                #Aktuell nur neueHatchFarbe
+
                 qDxfDat=korrDXFDatNam  + '_' + str(i) +'.dxf'
                 zDxfDat=korrDXFDatNam  + '_(korr)' + str(i) +'.dxf'
                 changeDXFAttribute(qDxfDat,zDxfDat,sDat)
@@ -335,10 +344,10 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
     uiParent.SetEinzelAktionAktSchritt(i)
     mergeDXFFiles (uiParent,EZUTempDir(),fertig, dxfDatNam, True)
     
-    #tmpDat = concatDXF(korrDXFDatNam  + '_1.dxf',korrDXFDatNam  + '_2.dxf', korrDXFDatNam  + '_3.csv')
-    # hier gab es mit move ab und zu probleme
-    # deshalb kopieren und anschließend löschen
-    #shutil.copyfile (tmpDat, dxfDatNam )
+
+
+
+
     try:
         os.remove(tmpDat)
     except: 
@@ -354,17 +363,17 @@ def delUnzipIfUcan():
     
     
 def GemWorker(uiParent, lKenn, qgisRootName, listZIPDatNam, expPfad, bSHPSave, bDXFSave, bMergeFlur):    
-    # Processing erst hier Laden, um den Start von QGIS zu beschleunigen
+
     import processing
     from processing.core.Processing import Processing
     
-    # -----------------------------------------------------------------------------------------------    
-    # listZIPDatNam:
-    #   http://geodownload.sachsen.de/inspire/cp_atom/gm_shape_25833/Gemarkung_Dittersdorf%20%282113%29	Dittersdorf (2113)
-    # 1. Root erzeugen, wenn noch nicht vorhanden
+
+
+
+
     rNode=QgsProject.instance().layerTreeRoot()
     root = None
-    for node in rNode.children(): # oberste Ebene in Schleife durchlaufen
+    for node in rNode.children(): 
         if str(type(node))  == "<class 'qgis._core.QgsLayerTreeGroup'>":
             if node.name() == qgisRootName:
                 root = node
@@ -378,20 +387,20 @@ def GemWorker(uiParent, lKenn, qgisRootName, listZIPDatNam, expPfad, bSHPSave, b
     else:
         AktShapePfad = EZUTempDir()
 
-    # -----------------------------------------------------------------------------------------------   
-    # Initialisierung    
-    # manchmal bleibt (bei mehrfachnutzung oder bei crash) irgend etwas hängen,
-    # die beiden nachfolgenden Zeilen haben bei einem Test das Problem gefixt - konnte aber noch nicht wiederholt werden
-    # recht zeitaufwändig
+
+
+
+
+
     uiParent.FormRunning(True)
     uiParent.SetEinzelAktionText("")
     uiParent.SetDatAktionText(tr("process init - please wait"))
 
     Processing.initialize()
-    #Processing.updateAlgsList()
 
-    # -----------------------------------------------------------------------------------------------    
-    # 3. Abarbeitung der Dateien
+
+
+
     i=0
     uiParent.SetDatAktionGesSchritte(len(listZIPDatNam))
     chkurl="http://www.makobo.de/links/GemList_SaxonyCadastralParcels.php?" + fncBrowserID() + "|" + fncPluginVersion() + ":"  
@@ -408,15 +417,15 @@ def GemWorker(uiParent, lKenn, qgisRootName, listZIPDatNam, expPfad, bSHPSave, b
         pass
     dxfMerge=[]
     for daten in listZIPDatNam:
-        # Übergeben wird <LandKenn> + <MitFlur> + Datenzeile
-        # - LandKenn und MitFlur von Datenzeile Trennen
+
+
         datZeile=daten.split("\t")
         sLandKenn = (datZeile[0])
         bMitFlur = (datZeile[1] == 'True')
         datZeile=datZeile[2:]
         
         idxDownloadURL = 0;idxWeiter = 1;idxLokName = 2;idxLand = 3;idxLK = 4;idxGemeinde = 5;idxGemarkung = 6;idxFlur = 7
-        #http://geodownload.sachsen.de/inspire/cp_atom/gm_shape_25833/Gemarkung_Dittersdorf%20(2113).zip	-1	Dittersdorf (2113)	Sachsen	Erzgebirgskreis	Amtsberg	Dittersdorf (2113)
+
          
 
         AktLandkreis  = datZeile[idxLK]
@@ -426,8 +435,8 @@ def GemWorker(uiParent, lKenn, qgisRootName, listZIPDatNam, expPfad, bSHPSave, b
         if bMitFlur: AktFlur  = datZeile[idxFlur]
         
         url = datZeile[idxDownloadURL]
-        # bei Download über QT darf das nicht codiert werden
-        #url = url.encode("utf8") # die url kann Umlaute enthalten, welche codiert werden müssen    
+
+
         zip = datZeile[idxLokName]+'.zip'
         
         if not uiParent.isRunning():
@@ -448,7 +457,7 @@ def GemWorker(uiParent, lKenn, qgisRootName, listZIPDatNam, expPfad, bSHPSave, b
         else:
             AktShapeName = str(uuid.uuid4())    
                 
-        # 1. Download
+
         uiParent.SetEinzelAktionAktSchritt(1)
         uiParent.SetEinzelAktionText(tr("Download ZIP-Archiv vom Landesserver"))
         
@@ -456,65 +465,68 @@ def GemWorker(uiParent, lKenn, qgisRootName, listZIPDatNam, expPfad, bSHPSave, b
             lokzip="d:/Flurst4SNTH.zip/" + sLandKenn + '/' + zip
         else:
             lokzip, size, status=zipDownload(url, zip)
-        
-        if lokzip is None:
-            continue
-        
+        if (size == 0):
+            addFehler ("Download der Geodaten von URL gescheitert:\n"+ url)
+        else:
 
-        uiParent.SetEinzelAktionAktSchritt(2)
-        uiParent.SetEinzelAktionText(tr("Verarbeite ZIP-Archiv"))
 
-        # 2. Unzip
-        # immer neues Verzeichnis, da vom Processing die Dateien manchmal gesperrt werden
-        # außerdem der Versuch die alten aufzuräumen
-        delUnzipIfUcan()
-        unzipdir = EZUTempDir() + str(uuid.uuid4()) + ".unzip/"
-
-        allShapeList=fncShapeDaten(sLandKenn)
-        shpList = unzipShape4BL(allShapeList, unzipdir, lokzip, AktShapePfad, AktShapeName)
-        if not shpList:
-            continue
-        # 3. QGIS Darstellung und CRS-Datei kopieren
-        for sDat in shpList:
-            kenn=sDat[ixDatKuerz]
-            qmlDat = os.path.dirname(__file__) + "/qml/" + sLandKenn + kenn +'.qml'
-            shutil.copyfile(qmlDat, AktShapePfad + AktShapeName + kenn +'.qml')
             
-            qpjDat = os.path.dirname(__file__) + "/qpj/" + sLandKenn   + '.qpj'
-            shutil.copyfile(qpjDat, AktShapePfad + AktShapeName + kenn + '.qpj') 
 
-        # 4. DXF erzeugen
-        if bDXFSave:
-            genDXF4Gemarkung (uiParent, unzipdir, shpList, expPfad + datZeile[idxLokName] + '.dxf')
-        
-        # 5. Shape in QGIS einbinden
-        # 5.1. Gruppe erzeugen bzw ermitteln
-        #   (a) Gemarkung erzeugen
-        tPfad=[];tPfad.append(AktLandkreis);tPfad.append(AktGemeinde);tPfad.append(AktGemarkung)
-        gemNode, Anz = NodeCreateByFullName (tPfad,root)
-        if Anz > 0: gemNode.setExpanded(False) # nur manipulieren, wenn neu erzeugt
-        #   (b) evtl. Flur erzeugen - getrennt erzeugen, damit Flur nich ausgeklappt
-        #   (c) hier auch zusammenzufassende DXF's ermitteln
+            uiParent.SetEinzelAktionAktSchritt(2)
+            uiParent.SetEinzelAktionText(tr("Verarbeite ZIP-Archiv"))
 
-        if bMitFlur and AktFlur !='': 
-            if bDXFSave and bMergeFlur:
-                dxfMerge.append(expPfad + datZeile[idxLokName] + '.dxf')
-            tPfad.append(AktFlur)
+
+
+
+            delUnzipIfUcan()
+            unzipdir = EZUTempDir() + str(uuid.uuid4()) + ".unzip/"
+
+            allShapeList=fncShapeDaten(sLandKenn)
+
+            shpList = unzipShape4BL(allShapeList, unzipdir, lokzip, AktShapePfad, AktShapeName)
+            if not shpList:
+                continue
+
+            for sDat in shpList:
+                kenn=sDat[ixDatKuerz]
+                qmlDat = os.path.dirname(__file__) + "/qml/" + sLandKenn + kenn +'.qml'
+                shutil.copyfile(qmlDat, AktShapePfad + AktShapeName + kenn +'.qml')
+                
+                qpjDat = os.path.dirname(__file__) + "/qpj/" + sLandKenn   + '.qpj'
+                shutil.copyfile(qpjDat, AktShapePfad + AktShapeName + kenn + '.qpj') 
+
+
+            if bDXFSave:
+                genDXF4Gemarkung (uiParent, unzipdir, shpList, expPfad + datZeile[idxLokName] + '.dxf')
+            
+
+
+
+            tPfad=[];tPfad.append(AktLandkreis);tPfad.append(AktGemeinde);tPfad.append(AktGemarkung)
             gemNode, Anz = NodeCreateByFullName (tPfad,root)
-            if Anz > 0: gemNode.setExpanded(False) # nur manipulieren, wenn neu erzeugt
-            
-            
-        # 5.2. Layer der Gruppe löschen
-        gemNode.removeAllChildren()
+            if Anz > 0: gemNode.setExpanded(False) 
 
-        for sDat in shpList:
-            Layer = QgsVectorLayer(AktShapePfad + AktShapeName + sDat[ixDatKuerz]+'.shp', u"Inspire "+ sDat[ixQName],"ogr")
-            Layer.setProviderEncoding(u'UTF-8')
-            if myqtVersion == 4:
-                QgsMapLayerRegistry.instance().addMapLayer(Layer, False)
-            else:
-                QgsProject.instance().addMapLayer(Layer,False) 
-            gemNode.insertLayer(0, Layer)
+
+
+            if bMitFlur and AktFlur !='': 
+                if bDXFSave and bMergeFlur:
+                    dxfMerge.append(expPfad + datZeile[idxLokName] + '.dxf')
+                tPfad.append(AktFlur)
+                gemNode, Anz = NodeCreateByFullName (tPfad,root)
+                if Anz > 0: gemNode.setExpanded(False) 
+                
+                
+
+            gemNode.removeAllChildren()
+
+            for sDat in shpList:
+                Layer = QgsVectorLayer(AktShapePfad + AktShapeName + sDat[ixDatKuerz]+'.shp', u"Inspire "+ sDat[ixQName],"ogr")
+                Layer.setProviderEncoding(u'UTF-8')
+                if myqtVersion == 4:
+                    QgsMapLayerRegistry.instance().addMapLayer(Layer, False)
+                else:
+                    QgsProject.instance().addMapLayer(Layer,False) 
+                gemNode.insertLayer(0, Layer)
 
     if bDXFSave and len(dxfMerge) >0:
         uiParent.SetEinzelAktionText(tr("Flure zusammenfassen"))
@@ -559,16 +571,18 @@ def mergeDXFFlur(uiParent, dxfList, bLoeschen):
 
             
 def changeDXFAttribute(qDxfDat,zDxfDat,sDat):
-    fqDxfDat  = fncUniDatOpen23(qDxfDat, "r",'cp1252') # 29.10.18 DXF grundsätzlich ansi
-    fzDxfDat  = fncUniDatOpen23(zDxfDat, "w",'cp1252') # 29.10.18 DXF grundsätzlich ansi
+    fqDxfDat  = fncUniDatOpen23(qDxfDat, "r",'cp1252') 
+    fzDxfDat  = fncUniDatOpen23(zDxfDat, "w",'cp1252') 
 
-    #NeueHatchFarbe
+
     dxfArray=fqDxfDat.readlines()
-    for aIdx in range(0,len(dxfArray)):  
+    for aIdx in range(0,len(dxfArray)): 
+
+
         if dxfArray[aIdx].strip() == "HATCH":
             if dxfArray[aIdx-1].strip() == "0" and dxfArray[aIdx+1].strip() == "5":
-                if dxfArray[aIdx+6].strip() != "AcDbEntity":
-                    addFehler ("Fehler DXF-Analyse Zeile " + str(aIdx) + " :  <> 'AcDbEntity'")
+                if dxfArray[aIdx+6].strip() != "AcDbEntity" and dxfArray[aIdx+4].strip() != "AcDbEntity":
+                    addFehler ("Fehler DXF-Analyse Datei:\n" + qDxfDat + " Zeile " + str(aIdx+6) + "/" + str(aIdx+3) + " :  <> 'AcDbEntity'")
                 dxfArray[aIdx + 6] = "AcDbEntity\n420\n" + sDat[ixDXFFarbe] + '\n'
     fzDxfDat.writelines(dxfArray)
     fzDxfDat.close()
@@ -586,38 +600,38 @@ def concatDXFBeschriftung(qDxfDat,qCsvDat,zDxfDat,sDat):
         os.remove(zDxfDat)
         
     fzDxfDat = fncUniDatOpen23(zDxfDat, "w",'cp1252')     
-    csvArray = fncUniDatReadAll23(qCsvDat,'utf-8')  # Utf8-Datei 
-    dxfArray = fncUniDatReadAll23(qDxfDat,'cp1252') # Ansi Datei 
+    csvArray = fncUniDatReadAll23(qCsvDat,'utf-8')  
+    dxfArray = fncUniDatReadAll23(qDxfDat,'cp1252') 
 
 
     bStartFlENT = False
     h=0;z=0
 
     for aIdx in range(0,len(dxfArray)):
-        # 1) Ermitteln des maximalen Handles und erweitern um Anzahl der CSV-Einträge
+
         if dxfArray[aIdx].rstrip() == "$HANDSEED" and dxfArray[aIdx - 1].strip() == "9" and dxfArray[aIdx + 1].strip() == "5":
             maxOldHandle = handleHex2Long(dxfArray[aIdx + 2])
             dxfArray[aIdx + 2] = handleLong2Hex(maxOldHandle + len(csvArray)-1) + '\n'
 
-        # 2) Ermitteln der Startzeile der Entities
+
         if dxfArray[aIdx].rstrip() == "ENTITIES" and dxfArray[aIdx - 1].strip() == "2" and dxfArray[aIdx + 1].strip() == "0":
             bStartFlENT = True
         if dxfArray[aIdx].rstrip() == "ENDSEC" and dxfArray[aIdx - 1].strip() == "0" and dxfArray[aIdx + 1].strip() == "0"  and bStartFlENT:
             bStartFlENT = False
-            # jetzt kann die Beschriftung  werden
-            # 1. Gemarkung
+
+
             handle = maxOldHandle ; z = 0
 
             for cIdx in range(0,len(csvArray)):
                 if myqtVersion == 5:
-                    xZeile = csvArray[cIdx].rstrip() #bytearray(csvArray[cIdx].rstrip(), 'cp1252')
+                    xZeile = csvArray[cIdx].rstrip() 
                 else:
                     xZeile = csvArray[cIdx].rstrip().decode("utf-8").encode('cp1252')
                 z=z+1
                 if z > 1 :
                     xZeile=xZeile.split(chr(9))
-                    #def dxf4Beschriftung (x,y,txt,handle,thoe='2.58759',layer='txtlayer'):
-                    #print (xZeile[0],xZeile[1],xZeile[3], handleLong2Hex(handle),sDat[ixLHoe],sDat[ixBName])
+
+
                     fzDxfDat.write (dxf4Beschriftung(xZeile[0],xZeile[1],xZeile[3], handleLong2Hex(handle),sDat[ixLHoe],sDat[ixBName]))
                     handle = handle + 1
                 
@@ -626,27 +640,27 @@ def concatDXFBeschriftung(qDxfDat,qCsvDat,zDxfDat,sDat):
     return True    
     
 def mergeDXFFiles(uiParent, Pfad, dxfFiles,zDatNam, bLoeschen):
-    # verbinden mehrerer DXF-Dateien, erste Datei liefert Header und Footer
-    # minHandle,maxHandle,varHandle,lastLayer,layZusatzBlock
+
+
     bFirst=True
     uiParent.SetEinzelAktionGesSchritte(len(dxfFiles)+1)      
     i=0
     for dxfDat in dxfFiles:
         uiParent.SetEinzelAktionAktSchritt(i)
         i=i+1
-        # 1. DXF in Header/Entities/Footer zerlegen und Handle umschreiben
+
         if bFirst:
-            #fncSplitOgrDXF(quellDat, entDat, EntHandleStart = -1, bFirstDXF=False, headDat = None, footDat = None)
+
             handles = fncSplitOgrDXF(dxfDat, Pfad + "e.txt", -1, True, Pfad + "h.txt", Pfad + "f.txt")
             bFirst=False
         else:
             handles = fncSplitOgrDXF(dxfDat, Pfad + "e.txt", handles)
 
 
-    # Schreiben GesamtDXF
-    # HANDSEED in Header schreiben
+
+
     uiParent.SetEinzelAktionAktSchritt(i)
-    dxfArray=fncUniDatReadAll23(Pfad + "h.txt",'cp1252') # 29.10.18 DXF grundsätzlich ansi
+    dxfArray=fncUniDatReadAll23(Pfad + "h.txt",'cp1252') 
     for aIdx in range(0,len(dxfArray)):
         if dxfArray[aIdx].rstrip() == "$HANDSEED" and dxfArray[aIdx - 1].strip() == "9" and dxfArray[aIdx + 1].strip() == "5":
             dxfArray[aIdx + 2] = handleLong2Hex(handles) + '\n'
@@ -664,11 +678,11 @@ def mergeDXFFiles(uiParent, Pfad, dxfFiles,zDatNam, bLoeschen):
     os.remove (Pfad + "f.txt")
 
 def fncSplitOgrDXF(quellDat, entDat, EntHandleStart = -1, bFirstDXF=False, headDat = None, footDat = None):
-    # 01.02.2018: Neue vereinfachte Version, Header und Fotter 1:1 übernehmen
-    # alles relativ "grobschlächtig", da OGR-Struktur bekannt und es schnell gehen soll
-    # DXF in eine Array zu bearbeiten schein in diesem Fall die beste Variante (gut Positionierbar)
-    #Dim dxfArray() As String, i As Long, HndAktEnt As Long
-    #Dim aIdx As Long, zStart As Long, zEnde As Long
+
+
+
+
+
 
     varHandle=0 
     HndAktEnt = EntHandleStart
@@ -684,35 +698,35 @@ def fncSplitOgrDXF(quellDat, entDat, EntHandleStart = -1, bFirstDXF=False, headD
 
     
     
-    # -----------------------------------
-    # 1. Header
-    # -----------------------------------  
+
+
+
     for aIdx in range(0,len(dxfArray)):
-        # 1. maximal Handle ermitteln
+
         if dxfArray[aIdx].rstrip() == "$HANDSEED":
             if dxfArray[aIdx - 1].strip() == "9" and dxfArray[aIdx + 1].strip() == "5":
                 varHandle = handleHex2Long(dxfArray[aIdx + 2])
-                if HndAktEnt == -1: HndAktEnt = varHandle +1 # bei der ersten Datei ist Start das eigentliche Ende, da auch handle im Header vergeben werden
+                if HndAktEnt == -1: HndAktEnt = varHandle +1 
         
-        # 2. Optional Header speichern
+
         if dxfArray[aIdx].rstrip() == "ENTITIES" and dxfArray[aIdx - 1].strip() == "2" and dxfArray[aIdx + 1].strip() == "0":
             idxEHeader=aIdx-1
             if not headDat is None:
                 subUniDatWriteAll23(headDat, "a",dxfArray[0:idxEHeader],'cp1252')
             break
     
-    # -----------------------------------
-    # 2. Entities
-    # -----------------------------------
+
+
+
     for aIdx in range(idxEHeader,len(dxfArray)):
         if dxfArray[aIdx].strip() == "5" and dxfArray[aIdx - 2].strip() == "0":
-            # eine 5 mit zeile-2 als 0 gibt es auch sonst,
-            # deshalb zusätzlich schaun, ob Zeile -1 eine Objektart "erkennbar" an mind 4 großen Buchstaben
+
+
             if len(dxfArray[aIdx - 1]) >= 4 and  not re.search("^[A-Z]*$",dxfArray[aIdx - 1]) is None:
                 dxfArray[aIdx + 1] = handleLong2Hex(HndAktEnt) + '\n'
                 HndAktEnt = HndAktEnt + 1
                         
-        # Entities speichern
+
         if dxfArray[aIdx].rstrip() == "ENDSEC" and dxfArray[aIdx - 1].strip() == "0" and dxfArray[aIdx + 1].strip() == "0":
             idxEEntities=aIdx-1
             if bFirstDXF:
@@ -720,11 +734,11 @@ def fncSplitOgrDXF(quellDat, entDat, EntHandleStart = -1, bFirstDXF=False, headD
             subUniDatWriteAll23(entDat, "a",dxfArray[idxEHeader+2:idxEEntities],'cp1252')
             break            
     
-    # -----------------------------------
-    # 3. Footer
-    # -----------------------------------
+
+
+
     if not footDat is None:
-        #ENDSEC kommt der Einfachkeit halber mit in den Footer
+
         subUniDatWriteAll23(footDat, "w",dxfArray[idxEEntities: len(dxfArray) + 1],'cp1252')
 
     return HndAktEnt

@@ -1,19 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-  29.10.2018: v rechnerabhängig
-  09.01.2018: alle PlugIn's abgeglichen
-
 /***************************************************************************
-
-                                 A QGIS plugin
- Download Flurstücke Sachsen und Thüringen, Darstellung in QGIS und Konvertierung nach DXF
-                              -------------------
-        begin                : 2016-04-18
-        git sha              : $Format:%H$
-        copyright            : (C) 2016 by EZUSoft
+ A QGIS plugin
+SaxonyCadastralParcels: Download Flurstuecke Sachsen und Thueringen, Darstellung in QGIS und Konvertierung nach DXF
+        copyright            : (C) 2020 by EZUSoft
         email                : qgis (at) makobo.de
  ***************************************************************************/
-
 /***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -23,6 +15,14 @@
  *                                                                         *
  ***************************************************************************/
 """
+
+
+
+
+
+
+
+
 try:
     from fnc4all import *
 
@@ -37,7 +37,7 @@ def fncProgVersion():
     return "V " + fncPluginVersion()
     
 def fncDebugMode(): 
-    if (os.path.exists(os.path.dirname(__file__) + '/00-debug.txt')): # Kennung für Testrechner
+    if (os.path.exists(os.path.dirname(__file__) + '/00-debug.txt')): 
         return True
     else:
         return False
@@ -48,7 +48,7 @@ def fncBrowserID():
     return s.value( "–id–", "" ) 
     
 def tr( message):
-    return message  # hier braucht es keine Übersetzung
+    return message  
     
 def fncCGFensterTitel(intCG = None):
     s = QSettings( "EZUSoft", fncProgKennung() )
