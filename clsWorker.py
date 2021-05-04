@@ -299,9 +299,9 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
         if Layer[0:2]=='*_': Layer=Layer[2:]
         korrSHPDatNam= unzipDir + Layer + '.shp'
         if sDat[ixF2L]:
-            opt = '-skipfailure -dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, ST_Boundary(geometry)  from \"' + Layer + '\""'
+            opt = '-skipfailure -dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, ST_Boundary(geometry)  from \'' + Layer + '\'"'
         else:
-            opt = '-skipfailure -dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, geometry from \"' + Layer + '\""'
+            opt = '-skipfailure -dialect sqlite -sql "SELECT \'' + sDat[ixLName] + '\' as Layer, geometry from \'' + Layer + '\'"'
         if myqtVersion == 4:
             pAntw=processing.runalg('gdalogr:convertformat', korrSHPDatNam , 10, opt , korrDXFDatNam  + '_' + str(i) +'.dxf')
         else:
@@ -313,15 +313,13 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
         
         if len(sDat) > 6:
 
-            opt = '-skipfailure -lco SEPARATOR=TAB -lco GEOMETRY=AS_XYZ -dialect sqlite -sql "SELECT ST_PointOnSurface(geometry), ' + sDat[ixLabel] + ' from \"' + Layer + '\""'
+            opt = '-skipfailure -lco SEPARATOR=TAB -lco GEOMETRY=AS_XYZ -dialect sqlite -sql "SELECT ST_PointOnSurface(geometry), ' + sDat[ixLabel] + ' from \'' + Layer + '\'"'
             if myqtVersion == 4:
                 pAntw=processing.runalg('gdalogr:convertformat', korrSHPDatNam , 12, opt , korrDXFDatNam  + '_' + str(i) +'.csv')
             else:
                 pList={'INPUT':korrSHPDatNam,'OPTIONS':opt,'OUTPUT': korrDXFDatNam  + '_' + str(i) +'.csv'}
                 pAntw=processing.run('gdal:convertformat',pList)
-                print (pList)
-                print (pAntw)
-                return False
+
             if pAntw is None:
                 errbox ('Fehler')
                 addFehler(tr("process 'gdalogr:convertformat' could not start please restart QGIS"))   
@@ -329,7 +327,7 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
             qDxfDat=korrDXFDatNam  + '_' + str(i) +'.dxf'
             qCsvDat=korrDXFDatNam  + '_' + str(i) +'.csv'
             zDxfDat=korrDXFDatNam  + '_(ges)' + str(i) +'.dxf'
-            msgbox (qCsvDat)
+
             concatDXFBeschriftung(qDxfDat,qCsvDat,zDxfDat,sDat)
             fertig.append(zDxfDat)
         else:
@@ -632,7 +630,11 @@ def concatDXFBeschriftung(qDxfDat,qCsvDat,zDxfDat,sDat):
                     xZeile=xZeile.split(chr(9))
 
 
-                    fzDxfDat.write (dxf4Beschriftung(xZeile[0],xZeile[1],xZeile[3], handleLong2Hex(handle),sDat[ixLHoe],sDat[ixBName]))
+
+
+
+                    
+                    fzDxfDat.write (dxf4Beschriftung(xZeile[0],xZeile[1],xZeile[3].replace('"',''), handleLong2Hex(handle),sDat[ixLHoe],sDat[ixBName]))
                     handle = handle + 1
                 
         fzDxfDat.write (dxfArray[aIdx])

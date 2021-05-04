@@ -14,8 +14,9 @@ description=Download, display and conversion of the Inspire parcels for the Germ
 
 author=Mike Blechschmidt EZUSoft
 email=qgis@makobo.de
-version=0.3.3
-changelog= 03.05.21 V0.3.3: Anpassungen an QGIS 3.18.2
+version=0.3.4
+changelog=04.05.21 V0.3.2: - Anpassungen an QGIS 3.18.2              
+               - Hochkommas bei DXF-Ausgabe einfachen Flurstuecksnummern entfernt        
         29.10.18 V0.3.2: Anpassungen an QGIS 3.4.0
         14.08.18 V0.3.1: Randlinien werden jetzt auch bei Exklaven sauber erzeugt
         13.08.18 V0.3.0: Neue Downloadfunktion über QT mit QGIS-Proxy, HTTPS, Redirekt

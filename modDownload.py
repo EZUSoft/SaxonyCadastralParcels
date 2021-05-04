@@ -83,8 +83,6 @@ def DownLoadOverQT (dlURL, LokFileName):
 
         request.setUrl(redirectUrl)
         manager = QgsNetworkAccessManager.instance()
-        manager.clearAccessCache
-        
         reply = manager.get(request)
         reply.setParent(None)
         

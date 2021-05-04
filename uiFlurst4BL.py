@@ -405,7 +405,10 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         
 
         if not bRun:
-            if self.bGlMitFlur: self.chkMergeFlur.show()
+            if self.bGlMitFlur:
+                self.chkMergeFlur.show()
+            else:
+                self.chkMergeFlur.hide()
 
 
         if bRun:
