@@ -1,0 +1,60 @@
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=Inspire Flurstuecke Sachsen und Thüringen
+qgisMinimumVersion=2.8
+qgisMaximumVersion=3.99
+description=Download, display and conversion of the Inspire parcels for the German states of Thuringia and Saxony
+
+author=EZUSoft
+email=qgis@makobo.de
+version=0.3.5
+changelog=03.06.22 V0.3.5: - interne Anpassungen
+        04.05.21 V0.3.3: - Anpassungen an QGIS 3.18.2              
+               - Hochkommas bei DXF-Ausgabe einfachen Flurstuecksnummern entfernt
+        29.10.18 V0.3.2: Anpassungen an QGIS 3.4.0
+        14.08.18 V0.3.1: Randlinien werden jetzt auch bei Exklaven sauber erzeugt
+        13.08.18 V0.3.0: Neue Downloadfunktion über QT mit QGIS-Proxy, HTTPS, Redirekt
+        30.07.18 V0.2.2: Problem bei neuer ALKIS-Struktur des GeoSN beseitigt
+        06.06.18 V0.2.1: Anpassung an neue ALKIS-Struktur des GeoSN
+        14.02.18 V0.2.0: Anpassung an QGIS3.xx; Erweiterung auf Thüringen
+        31.08.17 V0.1.2: "." durch "_" bei Gemarkungen im Downloadname ersetzen
+        22.08.17 V0.1.1: keine führende 0 bei Gemarkungen im Downloadname
+        11.08.17 V0.1.0: release first version
+
+about=Remark:
+      The plugin worked only data from Germany (Saxony, Thuringia). Thatswhy the plugin is only available in German language.
+      . 
+      - Download der Inspire Daten für Sachsen und Thüringen 
+      - Darstellung Flurstücke und Flurstücksnummern
+      - Optionale Abspeicherung als Shape + Darstellung
+      - Optionaler Export nach DXF
+      .
+      Bedienung:
+      Nach Einbinden des PlugIns sind die Funktionen unter dem Menüpunkt "Web" --> "Inspire Flurstuecke" verfügbar.
+
+tracker=https://github.com/EZUSoft/SaxonyCadastralParcels/issues
+repository=https://github.com/EZUSoft/SaxonyCadastralParcels
+homepage=http://www.makobo.de/links/Forum_SaxonyCadastralParcels.php
+# End of mandatory metadata
+
+# Recommended items:
+
+
+# Tags are comma separated with spaces allowed
+tags=Flurstücke, Sachsen, Thüringen, Inspire 
+category=Vector
+icon=icon.png
+
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
