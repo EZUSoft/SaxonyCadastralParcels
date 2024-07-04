@@ -14,8 +14,20 @@ description=Download, display and conversion of the Inspire parcels for the Germ
 
 author=EZUSoft
 email=qgis@makobo.de
-version=0.3.5
-changelog=03.06.22 V0.3.5: - interne Anpassungen
+version=0.4.3
+changelog=04.07.24 V0.4.3: 
+		interne Kennung umgestellt
+		verbesserte Fehlermeldung bei Konvertierugsproblemen
+
+		18.01.24 V0.4.2: 
+		Umstellung auf HTTPS
+
+		24.04.23 V0.4.1: 
+		Anpassung an neue Serverstruktur
+		temporäres Spendenprojekt
+
+        03.01.23 V0.4.0: - Anzeige der Aktualität
+        03.06.22 V0.3.5: - interne Anpassungen
         04.05.21 V0.3.3: - Anpassungen an QGIS 3.18.2              
                - Hochkommas bei DXF-Ausgabe einfachen Flurstuecksnummern entfernt
         29.10.18 V0.3.2: Anpassungen an QGIS 3.4.0
@@ -42,6 +54,7 @@ about=Remark:
 tracker=https://github.com/EZUSoft/SaxonyCadastralParcels/issues
 repository=https://github.com/EZUSoft/SaxonyCadastralParcels
 homepage=http://www.makobo.de/links/Forum_SaxonyCadastralParcels.php
+
 # End of mandatory metadata
 
 # Recommended items:
@@ -57,4 +70,5 @@ experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
+
 

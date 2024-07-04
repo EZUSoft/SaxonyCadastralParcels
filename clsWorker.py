@@ -38,6 +38,9 @@ SaxonyCadastralParcels: Download Flurstuecke Sachsen und Thueringen, Darstellung
 
 
 
+
+
+
 from random import randrange
 import sys
 import uuid
@@ -51,6 +54,7 @@ import zipfile
 from itertools import cycle
 import binascii
 import re
+import os.path
 
 try:
     from PyQt5 import QtGui
@@ -154,13 +158,43 @@ def zipDownload(url,zipname):
 
 
 
+def DownloadLandListe (ansiDatName):
+    qDatName=bytearray(ansiDatName, 'utf-8').decode("cp1252")
+    unzipdir = EZUTempDir() + "/unzip/"
+    datDatName = unzipdir + qDatName
+
+    url="https://www.makobo.de/data/" + qDatName
+    try:
+        if not os.path.exists(unzipdir):
+            os.makedirs(unzipdir) 
+  
+        size, status = DownLoadOverQT ( url,datDatName)    
+        if not os.path.isfile(datDatName):
+            addFehler (datDatName + ': download ist fehlgeschlagen (Status:' + status + ')') 
+            return None
+ 
+
+        fDatName  = fncUniDatOpen23(datDatName, "r",'ansi') 
+        arr=[]
+        for zeile in fDatName:
+            zeile=zeile.rstrip() 
+            arr.append (zeile)
+        fDatName.close()
+        return arr
+
+    except:
+        if fncDebugMode():
+            raise
+        errbox ('Download vom Makobo-Server fehlgeschlagen!\nBesteht eine Internetverbindung?')
+        return False
+        
 def DownloadLand2Array (ansiDatName):
 
     qDatName=bytearray(ansiDatName, 'utf-8').decode("cp1252")
     unzipdir = EZUTempDir() + "/unzip/"
     datDatName = unzipdir + qDatName
     zipDatName = unzipdir + qDatName + ".zip"
-    url="http://www.makobo.de/data/" + qDatName + ".zip"
+    url="https://www.makobo.de/data/" + qDatName + ".zip"
     try:
         if not os.path.exists(unzipdir):
             os.makedirs(unzipdir) 
@@ -327,9 +361,21 @@ def genDXF4Gemarkung (uiParent, unzipDir, shpList, dxfDatNam):
             qDxfDat=korrDXFDatNam  + '_' + str(i) +'.dxf'
             qCsvDat=korrDXFDatNam  + '_' + str(i) +'.csv'
             zDxfDat=korrDXFDatNam  + '_(ges)' + str(i) +'.dxf'
+            
 
-            concatDXFBeschriftung(qDxfDat,qCsvDat,zDxfDat,sDat)
-            fertig.append(zDxfDat)
+            datError=False
+            if not os.path.isfile(qDxfDat):
+                errbox ('qDxfDat: Fehler bei Umsetzung "' + korrSHPDatNam + '"')
+                addFehler('qDxfDat :Fehler bei Umsetzung "' + korrSHPDatNam + '"') 
+                datError=True
+            if not os.path.isfile(qCsvDat):
+                errbox ('qCsvDat: Fehler bei Umsetzung "' + korrSHPDatNam + '"')
+                addFehler('qCsvDat: Fehler bei Umsetzung "' + korrSHPDatNam + '"')  
+                datError=True                
+                
+            if not datError:
+                concatDXFBeschriftung(qDxfDat,qCsvDat,zDxfDat,sDat)
+                fertig.append(zDxfDat)
         else:
             if not sDat[ixDXFFarbe] is None:
 
@@ -401,7 +447,7 @@ def GemWorker(uiParent, lKenn, qgisRootName, listZIPDatNam, expPfad, bSHPSave, b
 
     i=0
     uiParent.SetDatAktionGesSchritte(len(listZIPDatNam))
-    chkurl="http://www.makobo.de/links/GemList_SaxonyCadastralParcels.php?" + fncBrowserID() + "|" + fncPluginVersion() + ":"  
+    chkurl="https://www.makobo.de/links/GemList_SaxonyCadastralParcels.php?" + fncBrowserID() + "|" + fncPluginVersion() + ":"  
     
     StepCount4Datei = 2
     if  bSHPSave:
@@ -597,7 +643,7 @@ def concatDXFBeschriftung(qDxfDat,qCsvDat,zDxfDat,sDat):
     if os.path.isfile(zDxfDat):
         os.remove(zDxfDat)
         
-    fzDxfDat = fncUniDatOpen23(zDxfDat, "w",'cp1252')     
+    fzDxfDat = fncUniDatOpen23(zDxfDat, "w",'cp1252')  
     csvArray = fncUniDatReadAll23(qCsvDat,'utf-8')  
     dxfArray = fncUniDatReadAll23(qDxfDat,'cp1252') 
 
@@ -746,5 +792,3 @@ def fncSplitOgrDXF(quellDat, entDat, EntHandleStart = -1, bFirstDXF=False, headD
     return HndAktEnt
 
     
-if __name__ == "__main__":
-    pass

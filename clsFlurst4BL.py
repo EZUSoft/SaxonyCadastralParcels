@@ -23,6 +23,7 @@ SaxonyCadastralParcels: Download Flurstuecke Sachsen und Thueringen, Darstellung
 
 
 
+
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import *
@@ -104,8 +105,8 @@ class clsFlurst4BL:
         
         s = QSettings( "EZUSoft", fncProgKennung() )
 
+        s.setValue( "–id–", fncXOR( str(getpass.getuser()) + '|' + str(os.getenv('USERDOMAIN')) ))
 
-        s.setValue( "–id–", fncXOR( str(uuid.uuid4()) + '|' + str(uuid.uuid4()) ))
 
 
     def tr(self, message):
@@ -181,10 +182,3 @@ class clsFlurst4BL:
         cls=uiFlurst4BL()
         cls.RunMenu()
         
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    c=clsFlurst4BL(None)
-    window = uiFlurst4BL()
-    window.show()
-    sys.exit(app.exec_())
-

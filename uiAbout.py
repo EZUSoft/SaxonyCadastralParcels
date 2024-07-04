@@ -21,6 +21,7 @@ SaxonyCadastralParcels: Download Flurstuecke Sachsen und Thueringen, Darstellung
 
 
 
+
 from qgis.utils import os, sys
 
 try:
@@ -60,15 +61,9 @@ class uiAbout(QDialog, FORM_CLASS):
         self.setupUi(self)
 
         s=self.lblLink.text()
-        s=s.replace("$$Homepage$$","http://www.makobo.de/links/Home_SaxonyCadastralParcels.php?id=" + fncBrowserID())
-        s=s.replace("$$Daten$$","http://www.makobo.de/links/Daten_SaxonyCadastralParcels.php?id=" + fncBrowserID())
-        s=s.replace("$$Forum$$","http://www.makobo.de/links/Forum_SaxonyCadastralParcels.php?id=" + fncBrowserID())
-        s=s.replace("$$Doku$$","http://www.makobo.de/links/Dokumentation_SaxonyCadastralParcels.php?id=" + fncBrowserID())
+        s=s.replace("$$Homepage$$","https://www.makobo.de/links/Home_SaxonyCadastralParcels.php?id=" + fncBrowserID())
+        s=s.replace("$$Daten$$","https://www.makobo.de/links/Daten_SaxonyCadastralParcels.php?id=" + fncBrowserID())
+        s=s.replace("$$Forum$$","https://www.makobo.de/links/Forum_SaxonyCadastralParcels.php?id=" + fncBrowserID())
+        s=s.replace("$$Doku$$","https://www.makobo.de/links/Dokumentation_SaxonyCadastralParcels.php?id=" + fncBrowserID())
         self.lblLink.setText(s)
   
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = uiAbout()
-    window.show()
-    sys.exit(app.exec_())
-

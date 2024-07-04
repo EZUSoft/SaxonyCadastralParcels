@@ -21,6 +21,7 @@ SaxonyCadastralParcels: Download Flurstuecke Sachsen und Thueringen, Darstellung
 
 
 
+
 try:
     from PyQt4.QtGui import QApplication
     from PyQt4.QtCore import QUrl, QEventLoop, QTimer
@@ -98,20 +99,6 @@ def DownLoadOverQT (dlURL, LokFileName):
         return None, reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
     reply.deleteLater()
     
-
-
-
-    
-if __name__ == "__main__":
-    import sys
-    app = QApplication(sys.argv)
-    print ("========== QT" + str(myqtVersion) + " ===========")
-
-
-
-    print(DownLoadOverQT ("http://www.makobo.de/data/expSN.dat.zip","d:/tar/expSN_qt" + str(myqtVersion) + ".zip"))
-
-
 
 
 

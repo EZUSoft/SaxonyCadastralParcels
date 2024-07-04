@@ -417,23 +417,3 @@ def fncUniDatOpen23 (DatName, Art, sEncode):
         tmp = open(DatName, Art)
     return tmp
         
-if __name__ == "__main__": 
-    Haupt,Neben,Revision=fncPluginVersion().split(".")
-    print( int(Haupt) >= 1 and int(Neben) >= 1)
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

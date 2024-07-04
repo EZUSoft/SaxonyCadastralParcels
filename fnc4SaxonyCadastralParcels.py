@@ -23,6 +23,12 @@ SaxonyCadastralParcels: Download Flurstuecke Sachsen und Thueringen, Darstellung
 
 
 
+
+
+from xml.dom import minidom
+import urllib.request
+import locale,datetime,uuid
+
 try:
     from fnc4all import *
 
@@ -44,7 +50,8 @@ def fncDebugMode():
 
 def fncBrowserID():
     s = QSettings( "EZUSoft", fncProgKennung() )
-    s.setValue( "-id-", fncXOR((fncProgKennung() + "ID=%02i%02i%02i%02i%02i%02i") % (time.localtime()[0:6])) )
+
+    s.setValue( "-id-", (fncProgKennung() + str(uuid.uuid4())))
     return s.value( "–id–", "" ) 
     
 def tr( message):
@@ -60,11 +67,21 @@ def fncCGFensterTitel(intCG = None):
     if intCG == 1:        
         sVersion = "2016"
     return u"Download und Konvertierung Inspire Flurstücke   (Programmversion " + fncProgVersion() + ")" 
-    
-if __name__ == "__main__": 
-    print (fncCGFensterTitel())
-    pass
 
+def StandAusAtom(XMLDat):
+    try:
+        usock = urllib.request.urlopen(XMLDat)
 
+        xmldoc = minidom.parse(usock)
+        usock.close()
 
+        Ebene1 = xmldoc.getElementsByTagName("feed")
+        Ebene2 = Ebene1[0].getElementsByTagName("entry")
+        Ebene3 = Ebene2[0].getElementsByTagName("updated")
+        sDate=Ebene3[0].firstChild.data[0:10]
 
+        locale.setlocale(locale.LC_ALL, 'de_DE')
+        return (datetime.datetime.strptime(sDate,'%Y-%m-%d').strftime("%d. %B %Y"))
+    except:
+        return '#unbekannt#'
+        

@@ -27,10 +27,19 @@ SaxonyCadastralParcels: Download Flurstuecke Sachsen und Thueringen, Darstellung
 
 
 
+
+
+
+
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import *
 import urllib
+
+
+from datetime import date 
+import webbrowser
+
 try:
     from PyQt5 import QtCore, QtGui, QtWidgets
     from PyQt5.QtCore import *
@@ -47,11 +56,11 @@ except:
 try:
     from fnc4all import *
     from fnc4SaxonyCadastralParcels import *
-    from clsWorker import GemWorker,DownloadLand2Array
+    from clsWorker import GemWorker,DownloadLand2Array,DownloadLandListe
 except:
     from .fnc4all import *
     from .fnc4SaxonyCadastralParcels import *
-    from .clsWorker import GemWorker,DownloadLand2Array
+    from .clsWorker import GemWorker,DownloadLand2Array,DownloadLandListe
 
 
 try:
@@ -85,7 +94,21 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         self.browseZielPfad.clicked.connect(self.browseZielPfad_clicked) 
         self.chkSHP.clicked.connect(self.chkSave_clicked)    
         self.chkDXF.clicked.connect(self.chkSave_clicked) 
-        self.btnStart.clicked.connect(self.btnStart_clicked)          
+        self.btnStart.clicked.connect(self.btnStart_clicked) 
+
+
+        LastDay=date(2023, 5, 19)
+        if (date.today() > LastDay):
+            self.btnDonate.setVisible(False)
+            self.lbDonate.setVisible(False)
+        else:
+            d= LastDay - date.today() 
+            if (d.days == 0):
+                self.lbDonate.setText ('!! Only today !!')  
+            else:
+                self.lbDonate.setText ('Nur noch ' + str(d.days) + ' Tage')         
+            self.btnDonate.clicked.connect(self.btnDonate_clicked) 
+			
         self.btnAbbruch.clicked.connect(self.btnAbbruch_clicked)  
         self.cbLand.currentIndexChanged.connect(self.signalLandWechsel) 
         self.StartHeight = self.height()
@@ -106,6 +129,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
     def fncAktLandName(self):
         if self.glAktLandKenn == "SN": return "Land Sachsen"
         if self.glAktLandKenn == "TH": return u"Land Thüringen"
+    
     def SetzeLandName(self, FolgeRuf=False):
         self.cbLand.clear()
         self.cbLand.addItem ("Land Sachsen")
@@ -156,9 +180,21 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
 
         
         self.SetDatAktionText("Download der Gemarkungsliste");self.SetDatAktionAktSchritt(1)
-        arrGem=DownloadLand2Array("exp"+self.glAktLandKenn+".dat")
+        arrGem = DownloadLand2Array("exp2"+self.glAktLandKenn+".dat")
         if arrGem == False:
             return
+        arrURL = DownloadLandListe("expBL.txt")
+        sAtom=None
+        self.lbLastUpdate.setText('')
+        if arrURL:
+            for land in arrURL:
+                Zeile=land.split("\t")
+                if (Zeile[0]==self.glAktLandKenn):
+                    if (len(Zeile) == 3):
+                        sAtom=Zeile[2]
+                        sAtom = StandAusAtom (sAtom)
+                        if sAtom:
+                            self.lbLastUpdate.setText('Stand der ALKIS-Daten: ' + sAtom)
         self.SetDatAktionText("Gemarkungsliste aufbauen");self.SetDatAktionAktSchritt(2)
 
         tvLand  = QTreeWidgetItem(self.objTVGem)
@@ -169,7 +205,10 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         
 
         self.objTVGem.addTopLevelItem(tvLand)
-        tvLand.setText(0, AktLandName)
+        if sAtom:
+            tvLand.setText(0, AktLandName + ' Stand: ' + sAtom)
+        else:
+            tvLand.setText(0, AktLandName)
 
         tvLand.setExpanded(True)
         
@@ -248,7 +287,7 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         self.chkMergeFlur.setEnabled(bGenDXF)
         
         self.chkSave_clicked()
-
+        self.lbLastUpdate.setText('')
         try:
             self.lbGDAL.setText(gdal.VersionInfo("GDAL_RELEASE_DATE"))
         except:
@@ -294,6 +333,10 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
         s.setValue( "bGenSHP", "Ja" if self.chkSHP.isChecked() == True else "Nein")
         s.setValue( "bGenDXF", "Ja" if self.chkDXF.isChecked() == True else "Nein")
           
+    def btnDonate_clicked(self):
+        sLink='https://www.makobo.de/links/Donate_SaxonyCadastralParcels.php?id=' + fncBrowserID()
+        webbrowser.open(sLink)
+        
     
     def btnAbbruch_clicked(self):
         self.SetDatAktionText("... wird abgebrochen")
@@ -443,12 +486,3 @@ class uiFlurst4BL(QDialog, FORM_CLASS):
             errbox("\n\n".join(getFehler()))
         if len(getHinweis()) > 0:
             msgbox(u"\n\n".join(getHinweis()))  
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-
-    window = uiFlurst4BL()
-    print (window.isRunning())
-    window.show()
-    sys.exit(app.exec_())
-
